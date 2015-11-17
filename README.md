@@ -23,6 +23,6 @@ We have all received messages, specifically, emails supposedly from friends or c
 
 * Explore more user friendly ways of verifying user is present at email generation (Bluetooth proximity unlock).
 
-Use a bluetooth LE app on user’s phone as a private key for signing messages automatically as long as phone is near computer * Analyse/Secure the system against attacks. Employ various security measures to prevent different types of attacks.
+* Use a bluetooth LE app on user’s phone as a private key for signing messages automatically as long as phone is near computer Analyse/Secure the system against attacks. Employ various security measures to prevent different types of attacks.
 
 * Make the messaging system more advanced, user friendly, secure and integrated. Make the system more polished and user-friendly.
