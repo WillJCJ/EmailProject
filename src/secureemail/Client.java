@@ -14,11 +14,12 @@ public class Client {
         inFromUser = new BufferedReader(new InputStreamReader(System.in));
         while(true){
             sentence = inFromUser.readLine();
+            received = sendAndReceive(sentence);
             if(sentence.toLowerCase().equals("close") || sentence.toLowerCase().equals("end") || sentence.toLowerCase().equals("exit")){
                 System.out.println("Closing connection with server.");
+                clientSocket.close();
                 break;
             }
-            received = sendAndReceive(sentence);
         }
     }
     
@@ -37,13 +38,10 @@ public class Client {
                 new InputStreamReader(clientSocket.getInputStream()));
         System.out.println("Sending '"+sentence+"' to server");
         outToServer.writeBytes(sentence + '\n');
+        System.out.println("Waiting for response");
         output = inFromServer.readLine();
+        System.out.println("Not waiting");
         System.out.println("Received: "+output);
         return (output);
-    }
-    
-    public static boolean close(){
-        
-        return false;
     }
 }

@@ -4,7 +4,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server{
+    
     public static void main(String[] args){
+    
         try {
             create(18300);
         } catch (Exception ex) {
