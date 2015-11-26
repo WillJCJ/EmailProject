@@ -48,7 +48,13 @@ public class ServerThread implements Runnable{
         String output = "";
         
         dbConnect();
-        
+        try{
+            addMessage(3,1,"Added this from the server!","notarealsignature");
+        }
+        catch(SQLException e){
+            System.err.println("Error adding to database: "+e);
+            //tell client
+        }
         //Login the client
         boolean accepted = false;
         String suppliedPassword = "";
@@ -152,8 +158,6 @@ public class ServerThread implements Runnable{
         //remove first ,_
         fieldString = fieldString.substring(2);
         
-        System.out.println("Query: SELECT "+fieldString+" FROM "+table+" WHERE "+whereConstraint);
-        
         ResultSet rs = st.executeQuery("SELECT "+fieldString+" FROM "+table+" WHERE "+whereConstraint);
         
         //Extract data from result set
@@ -168,8 +172,15 @@ public class ServerThread implements Runnable{
         //Clean-up environment
         rs.close();
         st.close();
-        conn.close();
+//        conn.close();
         return results;
+    }
+    
+    public void addMessage(int senderID, int targetID, String contents, String signature) throws SQLException{
+        Statement st = conn.createStatement();
+        
+        System.out.println("Query: INSERT INTO messages (senderID, targetID, messageContents, messageSignature) VALUES ("+senderID+", "+targetID+", "+contents+", "+signature+");");
+        st.executeUpdate("INSERT INTO messages (senderID, targetID, messageContents, messageSignature) VALUES ("+senderID+", "+targetID+", '"+contents+"', '"+signature+"');");
     }
     
     public String getClientPassword() throws SQLException{

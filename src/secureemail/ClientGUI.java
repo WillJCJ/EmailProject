@@ -7,14 +7,14 @@ package secureemail;
 
 /**
  *
- * @author drawingoffice
+ * @author Will
  */
-public class SecureEmailUI extends javax.swing.JFrame {
+public class ClientGUI extends javax.swing.JFrame {
 
     /**
-     * Creates new form SecureEmailUI
+     * Creates new form ClientGUI
      */
-    public SecureEmailUI() {
+    public ClientGUI() {
         initComponents();
     }
 
@@ -60,20 +60,20 @@ public class SecureEmailUI extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(SecureEmailUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(SecureEmailUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(SecureEmailUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(SecureEmailUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ClientGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new SecureEmailUI().setVisible(true);
+                new ClientGUI().setVisible(true);
             }
         });
     }

@@ -3,8 +3,11 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/Users/drawingoffice/Documents/CS/EmailProject/src/secureemail/ServerThread.java</file>
-            <file>file:/Users/drawingoffice/Documents/CS/EmailProject/src/secureemail/Client.java</file>
+            <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/Client.java</file>
+            <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/Server.java</file>
+            <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/ServerThread.java</file>
+            <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/LoginGUI.java</file>
+            <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/ClientGUI.java</file>
         </group>
     </open-files>
 </project-private>
