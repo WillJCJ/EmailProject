@@ -135,7 +135,7 @@ public class ServerThread implements Runnable{
             conn = DriverManager.getConnection(DB_URL,USER,PASS);
             System.out.println("Connected to DB");
         } catch (SQLException e) {
-            System.err.println(e);
+            System.err.println("Failed to connect to DB: "+e);
         }
     }
     
