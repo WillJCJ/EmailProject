@@ -2,7 +2,6 @@ package secureemail;
 
 import java.io.*;
 import java.net.*;
-import java.security.*;
 
 public class Client {
     private static Socket clientSocket;
@@ -42,19 +41,5 @@ public class Client {
         output = inFromServer.readLine();
         System.out.println("Received: "+output);
         return (output);
-    }
-    
-    public KeyPair generateKey() throws NoSuchAlgorithmException{
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        return keyPair;
-    }
-    
-    public byte[] signString(String s, KeyPair keys) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException{
-        Signature instance = Signature.getInstance("SHA1withRSA");
-        PrivateKey privateKey = keys.getPrivate();
-        instance.initSign(privateKey);
-        instance.update((s).getBytes());
-        byte[] signature = instance.sign();
-        return signature;
     }
 }

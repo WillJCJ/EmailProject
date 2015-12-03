@@ -4,11 +4,23 @@
  * and open the template in the editor.
  */
 package secureemail;
+
+import java.io.*;
+import java.net.Socket;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.util.*;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+
 /**
  *
  * @author drawingoffice
  */
 public class LoginGUI extends javax.swing.JFrame {
+    private static Socket clientSocket;
+    private static String backFromServer;
+    private static final Random RANDOM = new SecureRandom();
 
     /**
      * Creates new form SecureEmailUI
@@ -32,13 +44,13 @@ public class LoginGUI extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
-        jPasswordField1 = new javax.swing.JPasswordField();
         jButton1 = new javax.swing.JButton();
         jSeparator1 = new javax.swing.JSeparator();
         jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
+        jTextField2 = new javax.swing.JTextField();
 
         jLabel1.setText("jLabel1");
 
@@ -77,6 +89,12 @@ public class LoginGUI extends javax.swing.JFrame {
         jLabel6.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel6.setText("Don't have an account?");
 
+        jTextField2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTextField2MouseClicked(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -105,12 +123,12 @@ public class LoginGUI extends javax.swing.JFrame {
                                     .addComponent(jLabel2)
                                     .addComponent(jLabel3))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jTextField1)
-                                    .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addGroup(jPanel1Layout.createSequentialGroup()
                                         .addGap(11, 11, 11)
-                                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE))
                                 .addGap(0, 9, Short.MAX_VALUE)))
                         .addContainerGap())))
         );
@@ -122,9 +140,9 @@ public class LoginGUI extends javax.swing.JFrame {
                     .addComponent(jLabel2)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jLabel3)
-                    .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(jButton1)
                 .addGap(18, 18, 18)
@@ -164,13 +182,25 @@ public class LoginGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jTextField1MouseClicked
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        String passwordHash = jTextField2.getText();
+        backFromServer = sendAndReceive(jTextField1.getText() + "," + passwordHash);
+        System.out.println(backFromServer);
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jTextField2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTextField2MouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField2MouseClicked
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+        String sentence;
+        String received;
+        BufferedReader inFromUser;
+        connect("localhost",18300); //Change this line depending on where you're connecting
+        
+        
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -214,8 +244,84 @@ public class LoginGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPasswordField jPasswordField1;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
+   
+    public static void connect(String ip, int port){
+        System.out.println("Connecting to "+ip+":"+port);
+        try{
+            clientSocket = new Socket (ip,port);
+            System.out.println("Connected");
+        } catch (Exception e) {
+            System.err.println("Could not connect to server: " + e);
+        }
+    }
+    
+    public static String sendAndReceive(String sentence){
+        String output = "FAIL";
+        try{
+            DataOutputStream outToServer =
+                new DataOutputStream(clientSocket.getOutputStream());
+            BufferedReader inFromServer = 
+                new BufferedReader(
+                    new InputStreamReader(clientSocket.getInputStream()));
+            System.out.println("Sending '"+sentence+"' to server");
+            outToServer.writeBytes(sentence + '\n');
+            output = inFromServer.readLine();
+            System.out.println("Received: "+output);
+        }
+        catch(Exception e){
+            System.err.println("Failed to receive from server: " + e);
+        }
+        return (output);
+    }
+    
+    public KeyPair generateKey() throws NoSuchAlgorithmException{
+        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        return keyPair;
+    }
+    
+    public byte[] signString(String s, KeyPair keys) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException{
+        Signature instance = Signature.getInstance("SHA1withRSA");
+        PrivateKey privateKey = keys.getPrivate();
+        instance.initSign(privateKey);
+        instance.update((s).getBytes());
+        byte[] signature = instance.sign();
+        return signature;
+    }
+    
+    public static byte[] getNextSalt() {
+        byte[] salt = new byte[16];
+        RANDOM.nextBytes(salt);
+        return salt;
+    }
+    
+    public static byte[] hash(char[] password, byte[] salt) {
+        PBEKeySpec spec = new PBEKeySpec(password, salt, 10000, 256);
+        Arrays.fill(password, Character.MIN_VALUE);
+        try {
+            SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            return skf.generateSecret(spec).getEncoded();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new AssertionError("Error while hashing a password: " + e.getMessage(), e);
+        } finally {
+            spec.clearPassword();
+        }
+    }
+    
+    public static String sendLoginDetails(String username, char[] password){
+        byte[] saltBytes = getNextSalt();
+        byte[] hashBytes = hash(password, saltBytes);
+        String hashString = "";
+        String saltString = "";
+        try {
+            hashString = new String(hashBytes, "UTF-8");
+            saltString = new String(saltBytes, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            System.err.println("Could not create hash and salt: " + e);
+        }
+        return sendAndReceive("LOGN" + username + "," + hashString + "," + saltString);
+    }
 }

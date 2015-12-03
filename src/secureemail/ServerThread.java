@@ -5,10 +5,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Arrays;
+import java.util.Random;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 public class ServerThread implements Runnable{
     private String request;
@@ -19,6 +24,8 @@ public class ServerThread implements Runnable{
     private String clientID;
     
     private Connection conn = null;
+    
+    private static final Random RANDOM = new SecureRandom();
 
     //  Database credentials
     private static final String USER = "root";
@@ -45,91 +52,100 @@ public class ServerThread implements Runnable{
             System.err.println(e);
         }
         
-        String output = "";
+        String headerCode = "";
+        String message = "";
         
         dbConnect();
-        try{
-            addMessage(3,1,"Added this from the server!","notarealsignature");
-        }
-        catch(SQLException e){
-            System.err.println("Error adding to database: "+e);
-            //tell client
-        }
-        //Login the client
+        
         boolean accepted = false;
-        String suppliedPassword = "";
-        String actualPassword = "";
-        while (!accepted){
-            try{
-                System.out.println("Waiting for request from client.");
-                request = inFromClient.readLine();
-                String[] details = request.split(",");
-                clientID = details[0];
-                suppliedPassword = details[1];
-                System.out.println("Received:");
-                System.out.println("clientID: " + clientID);
-                System.out.println("Password: " + suppliedPassword);
-            }
-            catch(IOException e){
-                System.err.println("Error receiving from client: "+e);
-            }
-            try{
-                actualPassword = getClientPassword();
-                System.out.println("Password retrieved");
-            }
-            catch(SQLException e){
-                System.err.println("Error reading database: "+e);
-                //tell client
-            }
-            if (actualPassword.equals(suppliedPassword)){
-                accepted = true;
-                System.out.println("Password accepted");
-                output = "accepted";
-            }
-            else{
-                System.out.println("Password incorrect");
-                output = "Please re-enter password";
-                try {
-                    outToClient.writeBytes(output);
-                    System.out.println("Sent "+output+" back");
-                } catch (IOException e) {
-                    System.out.println("Error sending data to client: "+e);
-                }
-            }
-        }
-        try {
-            outToClient.writeBytes(output);
-            System.out.println("Sent "+output+" back");
-        } catch (IOException e) {
-            System.out.println("Error sending data to client: "+e);
-        }
+        String output;
+        String username;
+        String suppliedPassword;
+        String actualPassword;
+        String salt;
+        String[] details; //split on ',' into a maximum of 2 strings
+        
         while (true){
             try{
                 request = inFromClient.readLine();
                 System.out.println("Received '"+request+"' from client.");
+                headerCode = request.substring(0,4);
+                message = request.substring(4);
             }
             catch(IOException e){
                 System.err.println("Error receiving from client: "+e);
             }
-            if (request.equals("close")){
-                try {
-                    outToClient.writeBytes("confirmed\n"); //Let the client know you got their request to close connection
-                    clientSocket.close();
-                    break;
-                } catch (IOException e) {
-                    System.out.println("Error sending data to client: "+e);
-                }
-            }
-            else{
-                output = "?";
-                try {
-                    outToClient.writeBytes(output+"\n");
-                    System.out.println("Sent "+output+" back");
-                } catch (IOException e) {
-                    System.out.println("Error sending data to client: "+e);
+            output = "";
+            username = "";
+            salt = "";
+            switch(headerCode){
+                case "LOGN":{
+                    suppliedPassword = "";
+                    actualPassword = "";
+                    details = message.split(",",3); //split on ',' into a maximum of 2 strings
+                    username = details[0];
+                    salt = details[1];
+                    suppliedPassword = details[1];
+                    try{
+                        actualPassword = getClientPassword(username);
+                        System.out.println("Password retrieved");
+                    }
+                    catch(SQLException e){
+                        System.err.println("Error reading database: "+e);
+                        //tell client
+                    }
+                    if (actualPassword.equals(suppliedPassword)){
+                        accepted = true;
+                        System.out.println("Password accepted");
+                        output = "ACCEPT";
+                    }
+                    else{
+                        System.out.println("Password incorrect");
+                        output = "DECLINE";
+                    }
+                    try {
+                        outToClient.writeBytes(output);
+                        System.out.println("Sent "+output+" back");
+                    } catch (IOException e) {
+                        System.out.println("Error sending data to client: "+e);
+                    }  
                 }
             }
         }
+
+//        try {
+//            outToClient.writeBytes(output);
+//            System.out.println("Sent "+output+" back");
+//        } catch (IOException e) {
+//            System.out.println("Error sending data to client: "+e);
+//        }
+//        while (true){
+//            try{
+//                request = inFromClient.readLine();
+//                System.out.println("Received '"+request+"' from client.");
+//            }
+//            catch(IOException e){
+//                System.err.println("Error receiving from client: "+e);
+//            }
+//            if (request.equals("close")){
+//                try {
+//                    outToClient.writeBytes("confirmed\n"); //Let the client know you got their request to close connection
+//                    clientSocket.close();
+//                    break;
+//                } catch (IOException e) {
+//                    System.out.println("Error sending data to client: "+e);
+//                }
+//            }
+//            else{
+//                output = "?";
+//                try {
+//                    outToClient.writeBytes(output+"\n");
+//                    System.out.println("Sent "+output+" back");
+//                } catch (IOException e) {
+//                    System.out.println("Error sending data to client: "+e);
+//                }
+//            }
+//        }
     }
     
     
@@ -176,19 +192,19 @@ public class ServerThread implements Runnable{
         return results;
     }
     
-    public void addMessage(int senderID, int targetID, String contents, String signature) throws SQLException{
+    public void addToDB(String table, String columns, String values) throws SQLException{
         Statement st = conn.createStatement();
         
-        System.out.println("Query: INSERT INTO messages (senderID, targetID, messageContents, messageSignature) VALUES ("+senderID+", "+targetID+", "+contents+", "+signature+");");
-        st.executeUpdate("INSERT INTO messages (senderID, targetID, messageContents, messageSignature) VALUES ("+senderID+", "+targetID+", '"+contents+"', '"+signature+"');");
+        System.out.println("Query: INSERT INTO "+table+" ("+columns+") VALUES ("+values+");");
+        st.executeUpdate("INSERT INTO "+table+" ("+columns+") VALUES ("+values+");");
     }
     
-    public String getClientPassword() throws SQLException{
-        String password;
-        ArrayList<String> fields = new ArrayList<String>();
-        fields.add("password");
-        password = queryDB("clients", fields, "clientID = "+clientID).get(0).get(0);
-        return password;
+    public void addMessage(int senderID, int targetID, String contents, String signature) throws SQLException{
+        addToDB("messages", "senderID, targetID, messageContents, messageSignature", senderID+", "+targetID+", '"+contents+"', '"+signature+"'");
+    }
+    
+    public void addClient(String username, String password, String publicKey) throws SQLException{
+        addToDB("messages", "username, password, publicKey", "'"+username+"', '"+password+"', '"+publicKey+"'");
     }
     
     public ArrayList<ArrayList<String>> getClientMessages(){
@@ -204,4 +220,47 @@ public class ServerThread implements Runnable{
         }
         return messages;
     }
+    
+    public static byte[] getNextSalt() {
+        byte[] salt = new byte[16];
+        RANDOM.nextBytes(salt);
+        return salt;
+    }
+    
+    public static byte[] hash(char[] password, byte[] salt) {
+        PBEKeySpec spec = new PBEKeySpec(password, salt, 10000, 256);
+        Arrays.fill(password, Character.MIN_VALUE);
+        try {
+            SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            return skf.generateSecret(spec).getEncoded();
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new AssertionError("Error while hashing a password: " + e.getMessage(), e);
+        } finally {
+            spec.clearPassword();
+        }
+    }
+        
+//    public static boolean checkPass (String givenPassword, byte[] salt, byte[] expectedHash) {
+//        char[] passChars = givenPassword.toCharArray();
+//        byte[] checkHash = hash(passChars, salt);
+//        if (checkHash.length != expectedHash.length){
+//            return false;
+//        }
+//        for (int i = 0; i < checkHash.length; i++) {
+//            if (checkHash[i] != expectedHash[i]){
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
+//    
+//    public boolean checkClientPassword(String username, String givenPassword) throws SQLException{
+//        ArrayList<String> fields = new ArrayList<String>();
+//        ArrayList<String> user = new ArrayList<String>();
+//        fields.add("passwordHash, passwordSalt");
+//        user = queryDB("clients", fields, "username = "+username).get(0);
+//        String realPasswordHash = user.get(0);
+//        String salt = user.get(1);
+//        return true;
+//    }
 }
