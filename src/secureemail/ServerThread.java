@@ -12,6 +12,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
@@ -53,7 +55,7 @@ public class ServerThread implements Runnable{
         }
         
         String headerCode = "";
-        String message = "";
+        String receivedFromClient = "";
         
         dbConnect();
         
@@ -63,14 +65,14 @@ public class ServerThread implements Runnable{
         String suppliedPassword;
         String actualPassword;
         String salt;
-        String[] details; //split on ',' into a maximum of 2 strings
+        String[] parts; //split on ',' into a maximum of 2 strings
         
         while (true){
             try{
                 request = inFromClient.readLine();
                 System.out.println("Received '"+request+"' from client.");
                 headerCode = request.substring(0,4);
-                message = request.substring(4);
+                receivedFromClient = request.substring(4);
             }
             catch(IOException e){
                 System.err.println("Error receiving from client: "+e);
@@ -82,19 +84,11 @@ public class ServerThread implements Runnable{
                 case "LOGN":{
                     suppliedPassword = "";
                     actualPassword = "";
-                    details = message.split(",",3); //split on ',' into a maximum of 2 strings
-                    username = details[0];
-                    salt = details[1];
-                    suppliedPassword = details[1];
-                    try{
-                        actualPassword = getClientPassword(username);
-                        System.out.println("Password retrieved");
-                    }
-                    catch(SQLException e){
-                        System.err.println("Error reading database: "+e);
-                        //tell client
-                    }
-                    if (actualPassword.equals(suppliedPassword)){
+                    parts = receivedFromClient.split(",",3); //split on ',' into a maximum of 3 strings
+                    username = parts[0];
+                    salt = parts[1];
+                    suppliedPassword = parts[1];
+                    if (checkClientPassword(username)){
                         accepted = true;
                         System.out.println("Password accepted");
                         output = "ACCEPT";
@@ -106,46 +100,33 @@ public class ServerThread implements Runnable{
                     try {
                         outToClient.writeBytes(output);
                         System.out.println("Sent "+output+" back");
-                    } catch (IOException e) {
-                        System.out.println("Error sending data to client: "+e);
-                    }  
+                    }catch (IOException e) {
+                        System.err.println("Error sending data to client: "+e);
+                    }
+                }
+                case "SEND":{
+                    int messageTargetID;
+                    String messageSignature;
+                    String messageContents;
+                    parts = receivedFromClient.split(",",3);
+                    messageTargetID = Integer.parseInt(parts[0]);
+                    messageSignature = parts[1];
+                    messageContents = parts[2];
+                    if(addMessage(Integer.parseInt(clientID), messageTargetID, messageContents, messageSignature)){
+                        output = "ACCEPT";
+                    }
+                    else{
+                        output = "DECLINE";
+                    }
+                    try {
+                        outToClient.writeBytes(output);
+                        System.out.println("Sent "+output+" back");
+                    }catch (IOException e) {
+                        System.err.println("Error sending data to client: "+e);
+                    }
                 }
             }
         }
-
-//        try {
-//            outToClient.writeBytes(output);
-//            System.out.println("Sent "+output+" back");
-//        } catch (IOException e) {
-//            System.out.println("Error sending data to client: "+e);
-//        }
-//        while (true){
-//            try{
-//                request = inFromClient.readLine();
-//                System.out.println("Received '"+request+"' from client.");
-//            }
-//            catch(IOException e){
-//                System.err.println("Error receiving from client: "+e);
-//            }
-//            if (request.equals("close")){
-//                try {
-//                    outToClient.writeBytes("confirmed\n"); //Let the client know you got their request to close connection
-//                    clientSocket.close();
-//                    break;
-//                } catch (IOException e) {
-//                    System.out.println("Error sending data to client: "+e);
-//                }
-//            }
-//            else{
-//                output = "?";
-//                try {
-//                    outToClient.writeBytes(output+"\n");
-//                    System.out.println("Sent "+output+" back");
-//                } catch (IOException e) {
-//                    System.out.println("Error sending data to client: "+e);
-//                }
-//            }
-//        }
     }
     
     
@@ -199,12 +180,24 @@ public class ServerThread implements Runnable{
         st.executeUpdate("INSERT INTO "+table+" ("+columns+") VALUES ("+values+");");
     }
     
-    public void addMessage(int senderID, int targetID, String contents, String signature) throws SQLException{
-        addToDB("messages", "senderID, targetID, messageContents, messageSignature", senderID+", "+targetID+", '"+contents+"', '"+signature+"'");
+    public boolean addMessage(int senderID, int targetID, String contents, String signature){
+        try {
+            addToDB("messages", "senderID, targetID, messageContents, messageSignature", senderID+", "+targetID+", '"+contents+"', '"+signature+"'");
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Could not add message to DB: " + e);
+            return false;
+        }
     }
     
-    public void addClient(String username, String password, String publicKey) throws SQLException{
-        addToDB("messages", "username, password, publicKey", "'"+username+"', '"+password+"', '"+publicKey+"'");
+    public boolean addClient(String username, String password, String publicKey){
+        try {
+            addToDB("messages", "username, password, publicKey", "'"+username+"', '"+password+"', '"+publicKey+"'");
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Could not add message to DB: " + e);
+            return false;
+        }
     }
     
     public ArrayList<ArrayList<String>> getClientMessages(){
@@ -219,6 +212,18 @@ public class ServerThread implements Runnable{
             System.err.println("Error fetching messages from database: " + e);
         }
         return messages;
+    }
+    
+    public ArrayList<ArrayList<String>> getPublicKey(String targetID){
+        ArrayList<ArrayList<String>> clients = new ArrayList<ArrayList<String>>();
+        ArrayList<String> fields = new ArrayList<String>();
+        fields.add("publicKey");
+        try {
+            clients = queryDB("clients", fields, "clientID = "+targetID);
+        } catch (SQLException e) {
+            System.err.println("Error fetching messages from database: " + e);
+        }
+        return clients;
     }
     
     public static byte[] getNextSalt() {
@@ -240,27 +245,31 @@ public class ServerThread implements Runnable{
         }
     }
         
-//    public static boolean checkPass (String givenPassword, byte[] salt, byte[] expectedHash) {
-//        char[] passChars = givenPassword.toCharArray();
-//        byte[] checkHash = hash(passChars, salt);
-//        if (checkHash.length != expectedHash.length){
-//            return false;
-//        }
-//        for (int i = 0; i < checkHash.length; i++) {
-//            if (checkHash[i] != expectedHash[i]){
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-//    
-//    public boolean checkClientPassword(String username, String givenPassword) throws SQLException{
-//        ArrayList<String> fields = new ArrayList<String>();
-//        ArrayList<String> user = new ArrayList<String>();
-//        fields.add("passwordHash, passwordSalt");
-//        user = queryDB("clients", fields, "username = "+username).get(0);
-//        String realPasswordHash = user.get(0);
-//        String salt = user.get(1);
-//        return true;
-//    }
+    public static boolean checkPass (String givenPassword, byte[] salt, byte[] expectedHash) {
+        char[] passChars = givenPassword.toCharArray();
+        byte[] checkHash = hash(passChars, salt);
+        if (checkHash.length != expectedHash.length){
+            return false;
+        }
+        for (int i = 0; i < checkHash.length; i++) {
+            if (checkHash[i] != expectedHash[i]){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public boolean checkClientPassword(String givenPassword){
+        ArrayList<String> fields = new ArrayList<String>();
+        ArrayList<String> user = new ArrayList<String>();
+        fields.add("passwordHash, passwordSalt");
+        try {
+            user = queryDB("clients", fields, "clientID = "+clientID).get(0);
+        } catch (SQLException e) {
+            System.err.println("Could not check password: " + e);
+        }
+        String realPasswordHash = user.get(0);
+        String salt = user.get(1);
+        return true;
+    }
 }
