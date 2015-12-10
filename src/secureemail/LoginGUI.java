@@ -7,11 +7,13 @@ package secureemail;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.*;
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.util.*;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -21,6 +23,9 @@ public class LoginGUI extends javax.swing.JFrame {
     private static Socket clientSocket;
     private static String backFromServer;
     private static final Random RANDOM = new SecureRandom();
+    
+    private static DataOutputStream outToServer;
+    private static BufferedReader inFromServer;
 
     /**
      * Creates new form SecureEmailUI
@@ -44,13 +49,13 @@ public class LoginGUI extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
+        loginButton = new javax.swing.JButton();
         jSeparator1 = new javax.swing.JSeparator();
-        jButton3 = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
+        resetPasswordButton = new javax.swing.JButton();
+        registerButton = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
+        jPasswordField1 = new javax.swing.JPasswordField();
 
         jLabel1.setText("jLabel1");
 
@@ -72,28 +77,27 @@ public class LoginGUI extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel3.setText("Password");
 
-        jButton1.setText("Login");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        loginButton.setText("Login");
+        loginButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                loginButtonActionPerformed(evt);
             }
         });
 
-        jButton3.setText("Reset Password");
+        resetPasswordButton.setText("Reset Password");
 
-        jButton4.setText("Register");
+        registerButton.setText("Register");
+        registerButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                registerButtonActionPerformed(evt);
+            }
+        });
 
         jLabel5.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel5.setText("Can't Sign In?");
 
         jLabel6.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel6.setText("Don't have an account?");
-
-        jTextField2.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jTextField2MouseClicked(evt);
-            }
-        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -109,11 +113,11 @@ public class LoginGUI extends javax.swing.JFrame {
                                 .addGap(56, 56, 56)
                                 .addComponent(jLabel5)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jButton3))
+                                .addComponent(resetPasswordButton))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel6)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jButton4)))
+                                .addComponent(registerButton)))
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -123,13 +127,13 @@ public class LoginGUI extends javax.swing.JFrame {
                                     .addComponent(jLabel2)
                                     .addComponent(jLabel3))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
                                     .addGroup(jPanel1Layout.createSequentialGroup()
                                         .addGap(11, 11, 11)
-                                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(0, 9, Short.MAX_VALUE)))
+                                        .addComponent(loginButton, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jPasswordField1))
+                                .addGap(0, 0, Short.MAX_VALUE)))
                         .addContainerGap())))
         );
         jPanel1Layout.setVerticalGroup(
@@ -139,21 +143,21 @@ public class LoginGUI extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGap(20, 20, 20)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jButton1)
+                .addComponent(loginButton)
                 .addGap(18, 18, 18)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton3)
+                    .addComponent(resetPasswordButton)
                     .addComponent(jLabel5))
                 .addGap(4, 4, 4)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton4)
+                    .addComponent(registerButton)
                     .addComponent(jLabel6))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -181,25 +185,45 @@ public class LoginGUI extends javax.swing.JFrame {
     private void jTextField1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTextField1MouseClicked
     }//GEN-LAST:event_jTextField1MouseClicked
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        String passwordHash = jTextField2.getText();
-        backFromServer = sendAndReceive(jTextField1.getText() + "," + passwordHash);
+    private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginButtonActionPerformed
+        String username = jTextField1.getText();
+        char[] password = jPasswordField1.getPassword();
+        try {
+            backFromServer = sendLoginDetails(username, password);
+        } catch (NoSuchAlgorithmException e) {
+            System.err.println("Could not check password: " + e);
+        }
         System.out.println(backFromServer);
-    }//GEN-LAST:event_jButton1ActionPerformed
+        if (backFromServer.equals("DECLINE")){
+            JOptionPane.showMessageDialog(this, "Username or password incorrect, please re-enter your details.");
+        }
+        if (backFromServer.equals("ACCEPT")){
+            ClientGUI clientGUI = new ClientGUI(clientSocket);
+            this.setVisible(false);
+            dispose();
+            clientGUI.setVisible(true);
+        }
+        else{
+            JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.");
+        }
+    }//GEN-LAST:event_loginButtonActionPerformed
 
-    private void jTextField2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTextField2MouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField2MouseClicked
+    private void registerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registerButtonActionPerformed
+        RegisterGUI regGUI = new RegisterGUI();
+        regGUI.setVisible(true);
+    }//GEN-LAST:event_registerButtonActionPerformed
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        String sentence;
-        String received;
-        BufferedReader inFromUser;
-        connect("localhost",18300); //Change this line depending on where you're connecting
-        
+        boolean connected = false;
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new LoginGUI().setVisible(true);
+            }
+        });
         
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -223,50 +247,58 @@ public class LoginGUI extends javax.swing.JFrame {
             java.util.logging.Logger.getLogger(LoginGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new LoginGUI().setVisible(true);
+        //</editor-fold> 
+        
+        while (!connected) {            
+            try {
+                connect("localhost", 18300); //Change this line depending on where you're connecting
+                connected = true;
+                try{
+                    outToServer =
+                        new DataOutputStream(clientSocket.getOutputStream());
+                    inFromServer = 
+                        new BufferedReader(
+                            new InputStreamReader(clientSocket.getInputStream()));
+                }catch(Exception e){
+                    System.err.println("Could not set up input/output: " + e);
+                }
+            } catch (IOException e) {
+                System.err.println("Could not connect to server: " + e + "\nTrying again in 5 seconds");
+                try {
+                    TimeUnit.SECONDS.sleep(5);
+                } catch (InterruptedException ex){
+                    System.err.println("Could not sleep: " + ex);
+                }
             }
-        });
+        }
+
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPasswordField jPasswordField1;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
+    private javax.swing.JButton loginButton;
+    private javax.swing.JButton registerButton;
+    private javax.swing.JButton resetPasswordButton;
     // End of variables declaration//GEN-END:variables
    
-    public static void connect(String ip, int port){
+    public static void connect(String ip, int port) throws IOException{
         System.out.println("Connecting to "+ip+":"+port);
-        try{
-            clientSocket = new Socket (ip,port);
-            System.out.println("Connected");
-        } catch (Exception e) {
-            System.err.println("Could not connect to server: " + e);
-        }
+        clientSocket = new Socket (ip,port);
+        System.out.println("Connected");
     }
     
     public static String sendAndReceive(String sentence){
         String output = "FAIL";
         try{
-            DataOutputStream outToServer =
-                new DataOutputStream(clientSocket.getOutputStream());
-            BufferedReader inFromServer = 
-                new BufferedReader(
-                    new InputStreamReader(clientSocket.getInputStream()));
             System.out.println("Sending '"+sentence+"' to server");
             outToServer.writeBytes(sentence + '\n');
             output = inFromServer.readLine();
@@ -278,50 +310,21 @@ public class LoginGUI extends javax.swing.JFrame {
         return (output);
     }
     
-    public KeyPair generateKey() throws NoSuchAlgorithmException{
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        return keyPair;
+    public static byte[] hash(char[] password, byte[] salt) throws NoSuchAlgorithmException {
+        MessageDigest digest;
+        byte[] hash;
+        String passwordString = (Arrays.toString(salt) + Arrays.toString(password));
+        digest = MessageDigest.getInstance("SHA-256");
+        hash = digest.digest(passwordString.getBytes(StandardCharsets.UTF_8));
+        return hash;
     }
     
-    public byte[] signString(String s, KeyPair keys) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException{
-        Signature instance = Signature.getInstance("SHA1withRSA");
-        PrivateKey privateKey = keys.getPrivate();
-        instance.initSign(privateKey);
-        instance.update((s).getBytes());
-        byte[] signature = instance.sign();
-        return signature;
-    }
-    
-    public static byte[] getNextSalt() {
-        byte[] salt = new byte[16];
-        RANDOM.nextBytes(salt);
-        return salt;
-    }
-    
-    public static byte[] hash(char[] password, byte[] salt) {
-        PBEKeySpec spec = new PBEKeySpec(password, salt, 10000, 256);
-        Arrays.fill(password, Character.MIN_VALUE);
-        try {
-            SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            return skf.generateSecret(spec).getEncoded();
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new AssertionError("Error while hashing a password: " + e.getMessage(), e);
-        } finally {
-            spec.clearPassword();
-        }
-    }
-    
-    public static String sendLoginDetails(String username, char[] password){
-        byte[] saltBytes = getNextSalt();
+    public static String sendLoginDetails(String username, char[] password) throws NoSuchAlgorithmException{
+        String salt = sendAndReceive("SALT" + username);
+        byte[] saltBytes = salt.getBytes();
         byte[] hashBytes = hash(password, saltBytes);
         String hashString = "";
-        String saltString = "";
-        try {
-            hashString = new String(hashBytes, "UTF-8");
-            saltString = new String(saltBytes, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            System.err.println("Could not create hash and salt: " + e);
-        }
-        return sendAndReceive("LOGN" + username + "," + hashString + "," + saltString);
+        hashString = Arrays.toString(hashBytes);
+        return sendAndReceive("LOGN" + username + "." + hashString);
     }
 }
