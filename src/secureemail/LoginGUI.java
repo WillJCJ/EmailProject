@@ -9,11 +9,18 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.*;
 import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.swing.JOptionPane;
+import static sun.security.x509.CertificateAlgorithmId.ALGORITHM;
 
 /**
  *
@@ -320,11 +327,41 @@ public class LoginGUI extends javax.swing.JFrame {
     }
     
     public static String sendLoginDetails(String username, char[] password) throws NoSuchAlgorithmException{
-        String salt = sendAndReceive("SALT" + username);
-        byte[] saltBytes = salt.getBytes();
-        byte[] hashBytes = hash(password, saltBytes);
-        String hashString = "";
-        hashString = Arrays.toString(hashBytes);
-        return sendAndReceive("LOGN" + username + "." + hashString);
+        return sendAndReceive("LOGN" + username + "." + Arrays.toString(password));
+    }
+    
+    public PublicKey getServerPubKey() throws InvalidKeySpecException, NoSuchAlgorithmException{
+        String pubKeyText = sendAndReceive("PUBK\n");
+        byte[] keyBytes = hexToBytes(pubKeyText);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(keyBytes);
+        PublicKey pubKey = keyFactory.generatePublic(publicKeySpec);
+        return pubKey;
+    }
+
+    private static String bytesToHex(byte[] bytes){
+        String result = "";
+        for (int i = 0; i < bytes.length; i++) {
+                result += Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
+    
+    public static byte[] hexToBytes(String s){
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
+    
+    public byte[] encryptString(String inputString, PublicKey pubKey) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
+        // get an RSA cipher object and print the provider
+        final Cipher cipher = Cipher.getInstance(ALGORITHM);
+        // encrypt the plain text using the public key
+        cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+        byte[] cipherText = cipher.doFinal(inputString.getBytes());
+        return cipherText;
     }
 }

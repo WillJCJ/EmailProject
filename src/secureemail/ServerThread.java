@@ -1,27 +1,22 @@
 package secureemail;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
+import java.security.*;
+import java.security.spec.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import java.util.*;
+import javax.crypto.*;
+import javax.crypto.spec.*;
 
 public class ServerThread implements Runnable{
     private String request;
     private BufferedReader inFromClient;
     private DataOutputStream outToClient;
     private Socket clientSocket;
+    
+    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\client\\public";
+    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\client\\private";
     
     private Connection conn = null;
     
@@ -60,12 +55,9 @@ public class ServerThread implements Runnable{
         boolean accepted = false;
         String output;
         String username;
-        String suppliedPasswordHash;
-        String actualPasswordHash;
-        String salt;
+        String suppliedPassword;
         String[] parts; //split on '.' into a maximum of 2 strings
         username = "";
-        salt = "";
         
         while (true){
             try{
@@ -80,11 +72,11 @@ public class ServerThread implements Runnable{
             }
             //Log in
             if (headerCode.equals("LOGN")){
-                suppliedPasswordHash = "";
+                suppliedPassword = "";
                 parts = receivedFromClient.split("\\.",2); //split on '.' into a maximum of 3 strings
                 username = parts[0];
-                suppliedPasswordHash = parts[1];
-                if (checkClientPassword(username, suppliedPasswordHash)){
+                suppliedPassword = parts[1];
+                if (checkClientPassword(username, suppliedPassword)){
                     accepted = true;
                     System.out.println("Password accepted");
                     output = "ACCEPT";
@@ -114,20 +106,15 @@ public class ServerThread implements Runnable{
             else if (headerCode.equals("SALT")){
                 output = getClientSalt(receivedFromClient);
             }
-            //New Salt
-            else if (headerCode.equals("NEWS")){
-                salt = Arrays.toString(getNextSalt());
-                output = salt;
-            }
             //New User
             else if (headerCode.equals("NEWU")){
                 System.out.println(receivedFromClient);
                 parts = receivedFromClient.split("\\.",2);
                 System.out.println(parts);
                 username = parts[0];
-                suppliedPasswordHash = parts[1];
-                System.out.println(username+":::"+suppliedPasswordHash);
-                addClient(username, suppliedPasswordHash, "Change this later", salt);
+                suppliedPassword = parts[1];
+                System.out.println(username+":::"+suppliedPassword);
+                addClient(username, suppliedPassword, "Change this later");
                 output = "ACCEPT";
             }
             else{
@@ -205,9 +192,14 @@ public class ServerThread implements Runnable{
         }
     }
     
-    public boolean addClient(String username, String passwordHash, String publicKey, String passwordSalt){
+    public boolean addClient(String username, String password, String publicKey){
+        byte[] saltBytes = getNextSalt();
+        char[] passChars = password.toCharArray();
+        byte[] passwordHashBytes = hash(passChars, saltBytes);
+        String passwordHashString = bytesToHex(passwordHashBytes);
+        String saltString = bytesToHex(saltBytes);
         try {
-            addToDB("clients", "username, passwordHash, publicKey, passwordSalt", "'"+username+"', '"+passwordHash+"', '"+publicKey+"'"+", '"+passwordSalt+"'");
+            addToDB("clients", "username, passwordHash, publicKey, passwordSalt", "'"+username+"', '"+passwordHashString+"', '"+publicKey+"'"+", '"+saltString+"'");
             return true;
         } catch (SQLException e) {
             System.err.println("Could not add message to DB: " + e);
@@ -286,7 +278,8 @@ public class ServerThread implements Runnable{
         return true;
     }
     
-    public boolean checkClientPassword(String username, String givenPasswordHash){
+    public boolean checkClientPassword(String username, String givenPassword){
+        String givenPasswordHash = "";
         ArrayList<String> fields = new ArrayList<String>();
         ArrayList<String> user = new ArrayList<String>();
         fields.add("passwordHash");
@@ -301,11 +294,85 @@ public class ServerThread implements Runnable{
         }
         System.out.println(user);
         String realPasswordHash = user.get(0);
-        if (realPasswordHash.equals(givenPasswordHash)){
-            return true;
+        return checkPass(givenPassword, hexToBytes(getClientSalt(username)), hexToBytes(realPasswordHash));
+    }
+    
+    public KeyPair genKeyPair() throws NoSuchAlgorithmException{
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(1024);
+        KeyPair generatedKeyPair = keyGen.genKeyPair();
+        return generatedKeyPair;
+    }
+    
+    public void dumpKeyPair(KeyPair keyPair) {
+		PublicKey pub = keyPair.getPublic();
+		System.out.println("Public Key: " + bytesToHex(pub.getEncoded()));
+ 
+		PrivateKey priv = keyPair.getPrivate();
+		System.out.println("Private Key: " + bytesToHex(priv.getEncoded()));
+    }
+
+    public String bytesToHex(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+                result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
         }
-        else{
-            return false;
+        return result;
+    }
+    
+    public static byte[] hexToBytes(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
         }
+        return data;
+    }
+
+    public void saveKeyPair(KeyPair keyPair) throws IOException {
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+
+        // Store Public Key.
+        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
+                        publicKey.getEncoded());
+        FileOutputStream fos = new FileOutputStream(PUBLIC_KEY_FILE);
+        fos.write(x509EncodedKeySpec.getEncoded());
+        fos.close();
+
+        // Store Private Key.
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
+                        privateKey.getEncoded());
+        fos = new FileOutputStream(PRIVATE_KEY_FILE);
+        fos.write(pkcs8EncodedKeySpec.getEncoded());
+        fos.close();
+    }
+
+    public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+            // Read Public Key.
+            File filePublicKey = new File(PUBLIC_KEY_FILE);
+            FileInputStream fis = new FileInputStream(PUBLIC_KEY_FILE);
+            byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
+            fis.read(encodedPublicKey);
+            fis.close();
+
+            // Read Private Key.
+            File filePrivateKey = new File(PRIVATE_KEY_FILE);
+            fis = new FileInputStream(PRIVATE_KEY_FILE);
+            byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
+            fis.read(encodedPrivateKey);
+            fis.close();
+
+            // Generate KeyPair.
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(
+                            encodedPublicKey);
+            PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(
+                            encodedPrivateKey);
+            PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
+
+            return new KeyPair(publicKey, privateKey);
     }
 }

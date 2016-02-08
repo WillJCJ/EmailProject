@@ -20,8 +20,8 @@ import java.util.logging.Logger;
 public class ClientGUI extends javax.swing.JFrame {
     private static Socket clientSocket;
     private static String backFromServer;
-    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\public.key";
-    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\private.key";
+    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\client\\public";
+    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\client\\private";
 
     /**
      * Creates new form ClientGUI
@@ -54,6 +54,8 @@ public class ClientGUI extends javax.swing.JFrame {
         jTextArea1 = new javax.swing.JTextArea();
         jScrollPane3 = new javax.swing.JScrollPane();
         jList1 = new javax.swing.JList<>();
+        jButton3 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenu2 = new javax.swing.JMenu();
@@ -67,7 +69,12 @@ public class ClientGUI extends javax.swing.JFrame {
             }
         });
 
-        jButton2.setText("Refesh");
+        jButton2.setText("Make Key");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jSeparator1.setOrientation(javax.swing.SwingConstants.VERTICAL);
 
@@ -89,6 +96,7 @@ public class ClientGUI extends javax.swing.JFrame {
         jTextArea1.setColumns(20);
         jTextArea1.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
         jTextArea1.setRows(5);
+        jTextArea1.setText("hi");
         jScrollPane1.setViewportView(jTextArea1);
 
         jList1.setModel(new javax.swing.AbstractListModel<String>() {
@@ -98,6 +106,20 @@ public class ClientGUI extends javax.swing.JFrame {
         });
         jList1.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jScrollPane3.setViewportView(jList1);
+
+        jButton3.setText("Sign Message");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+
+        jButton4.setText("Read Keys");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
 
         jMenu1.setText("File");
         jMenuBar1.add(jMenu1);
@@ -132,7 +154,12 @@ public class ClientGUI extends javax.swing.JFrame {
                     .addComponent(jTextField3)
                     .addComponent(jTextField2)
                     .addComponent(jTextField1)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 324, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 218, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addGap(22, 22, 22))
         );
         layout.setVerticalGroup(
@@ -157,7 +184,12 @@ public class ClientGUI extends javax.swing.JFrame {
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(0, 0, Short.MAX_VALUE))
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE)))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(59, 59, 59)
+                                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE))))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -176,9 +208,34 @@ public class ClientGUI extends javax.swing.JFrame {
         senderGUI.setVisible(true);
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        try {
+            KeyPair kp = genKeyPair();
+            saveKeyPair(kp);
+            dumpKeyPair(kp);
+        } catch (Exception ex) {
+            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        try {
+            KeyPair kp = loadKeyPair();
+            dumpKeyPair(kp);
+        } catch (Exception ex) {
+            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_jButton4ActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -196,67 +253,170 @@ public class ClientGUI extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField3;
     // End of variables declaration//GEN-END:variables
     
-    public byte[] signString(String s, KeyPair keys) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException{
-        Signature instance = Signature.getInstance("SHA1withRSA");
-        PrivateKey privateKey = keys.getPrivate();
-        instance.initSign(privateKey);
-        instance.update((s).getBytes());
-        byte[] signature = instance.sign();
-        return signature;
+//    public static void saveKey() throws NoSuchAlgorithmException, InvalidKeySpecException, FileNotFoundException, IOException, NoSuchProviderException{
+//        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", "SUN");
+//        SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+//        kpg.initialize(2048, random);
+//
+//        KeyPair kp = kpg.genKeyPair();
+//
+//        KeyFactory fact = KeyFactory.getInstance("DSA", "SUN");
+//
+//        byte[] pubKey = kp.getPublic().getEncoded();
+//        FileOutputStream pubos = new FileOutputStream(PUBLIC_KEY_FILE);
+//        pubos.write(pubKey);
+//        pubos.close();
+//
+//        byte[] privKey = kp.getPrivate().getEncoded();
+//        FileOutputStream privos = new FileOutputStream(PRIVATE_KEY_FILE);
+//        privos.write(privKey);
+//        privos.close();
+//    }
+//
+//    private static void saveToFile(String fileName, BigInteger mod, BigInteger exp) {
+//        ObjectOutputStream oout = null;
+//        try {
+//            oout = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(fileName)));
+//            oout.writeObject(mod);
+//            oout.writeObject(exp);
+//        } catch (IOException ex) {
+//            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+//        } finally {
+//            try {
+//                oout.close();
+//            } catch (IOException ex) {
+//                Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        }
+//    }
+//
+//    private static PrivateKey readPrivateKey() throws FileNotFoundException, IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException{
+////        InputStream in = new FileInputStream(PRIVATE_KEY_FILE);
+////        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
+////        BigInteger m = (BigInteger) oin.readObject();
+////        BigInteger e = (BigInteger) oin.readObject();
+////        RSAPublicKeySpec keySpec = new RSAPublicKeySpec(m, e);
+////        KeyFactory fact = KeyFactory.getInstance("DSA", "SUN");
+////        PrivateKey privKey = fact.generatePrivate(keySpec);
+////        return privKey;
+//        FileInputStream privfis = new FileInputStream(PRIVATE_KEY_FILE);
+//        byte[] encKey = new byte[privfis.available()];  
+//        privfis.read(encKey);
+//
+//        privfis.close();
+//        
+//        X509EncodedKeySpec privKeySpec = new X509EncodedKeySpec(encKey);
+//        
+//        KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
+//        PrivateKey privKey = keyFactory.generatePrivate(privKeySpec);
+//        return privKey;
+//    }
+//
+//    private static PublicKey readPublicKey() throws FileNotFoundException, IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException{
+////        InputStream in = new FileInputStream(PUBLIC_KEY_FILE);
+////        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
+////        BigInteger m = (BigInteger) oin.readObject();
+////        BigInteger e = (BigInteger) oin.readObject();
+////        RSAPublicKeySpec keySpec = new RSAPublicKeySpec(m, e);
+////        KeyFactory fact = KeyFactory.getInstance("RSA");
+////        PublicKey pubKey = fact.generatePublic(keySpec);
+////        return pubKey;
+//        FileInputStream pubfis = new FileInputStream(PUBLIC_KEY_FILE);
+//        byte[] encKey = new byte[pubfis.available()];  
+//        pubfis.read(encKey);
+//
+//        pubfis.close();
+//        
+//        X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encKey);
+//        
+//        KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
+//        PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
+//        return pubKey;
+//    }
+    
+    public KeyPair genKeyPair() throws NoSuchAlgorithmException{
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair generatedKeyPair = keyGen.genKeyPair();
+        return generatedKeyPair;
     }
-    public static void saveKey() throws NoSuchAlgorithmException, InvalidKeySpecException{
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(2048);
-
-        KeyPair kp = kpg.genKeyPair();
-
-        KeyFactory fact = KeyFactory.getInstance("RSA");
-
-        RSAPublicKeySpec pub = fact.getKeySpec(kp.getPublic(),
-        RSAPublicKeySpec.class);
-        saveToFile(PUBLIC_KEY_FILE, pub.getModulus(), pub.getPublicExponent());
-
-        RSAPrivateKeySpec priv = fact.getKeySpec(kp.getPrivate(),
-        RSAPrivateKeySpec.class);
-        saveToFile(PRIVATE_KEY_FILE, priv.getModulus(), priv.getPrivateExponent());
+    
+    public void dumpKeyPair(KeyPair keyPair) {
+        dumpPublicKey(keyPair);
+        dumpPrivateKey(keyPair);
+    }
+    
+    public void dumpPublicKey(KeyPair keyPair){
+        PublicKey pub = keyPair.getPublic();
+        System.out.println("Public Key: " + bytesToHex(pub.getEncoded()));
+    }
+    
+    public void dumpPrivateKey(KeyPair keyPair){
+        PrivateKey priv = keyPair.getPrivate();
+        System.out.println("Private Key: " + bytesToHex(priv.getEncoded()));
     }
 
-    private static void saveToFile(String fileName, BigInteger mod, BigInteger exp) {
-        ObjectOutputStream oout = null;
-        try {
-            oout = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(fileName)));
-            oout.writeObject(mod);
-            oout.writeObject(exp);
-        } catch (IOException ex) {
-            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                oout.close();
-            } catch (IOException ex) {
-                Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-            }
+    public String bytesToHex(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+                result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
         }
+        return result;
+    }
+    
+    public static byte[] hexToBytes(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 
-    private static PrivateKey readPrivateKey() throws FileNotFoundException, IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException{
-        InputStream in = new FileInputStream(PRIVATE_KEY_FILE);
-        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
-        BigInteger m = (BigInteger) oin.readObject();
-        BigInteger e = (BigInteger) oin.readObject();
-        RSAPublicKeySpec keySpec = new RSAPublicKeySpec(m, e);
-        KeyFactory fact = KeyFactory.getInstance("RSA");
-        PrivateKey privKey = fact.generatePrivate(keySpec);
-        return privKey;
+    public void saveKeyPair(KeyPair keyPair) throws IOException {
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+
+        // Store Public Key.
+        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
+                        publicKey.getEncoded());
+        FileOutputStream fos = new FileOutputStream(PUBLIC_KEY_FILE);
+        fos.write(x509EncodedKeySpec.getEncoded());
+        fos.close();
+
+        // Store Private Key.
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
+                        privateKey.getEncoded());
+        fos = new FileOutputStream(PRIVATE_KEY_FILE);
+        fos.write(pkcs8EncodedKeySpec.getEncoded());
+        fos.close();
     }
 
-    private static PublicKey readPublicKey() throws FileNotFoundException, IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException{
-        InputStream in = new FileInputStream(PUBLIC_KEY_FILE);
-        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
-        BigInteger m = (BigInteger) oin.readObject();
-        BigInteger e = (BigInteger) oin.readObject();
-        RSAPublicKeySpec keySpec = new RSAPublicKeySpec(m, e);
-        KeyFactory fact = KeyFactory.getInstance("RSA");
-        PublicKey pubKey = fact.generatePublic(keySpec);
-        return pubKey;
+    public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+            // Read Public Key.
+            File filePublicKey = new File(PUBLIC_KEY_FILE);
+            FileInputStream fis = new FileInputStream(PUBLIC_KEY_FILE);
+            byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
+            fis.read(encodedPublicKey);
+            fis.close();
+
+            // Read Private Key.
+            File filePrivateKey = new File(PRIVATE_KEY_FILE);
+            fis = new FileInputStream(PRIVATE_KEY_FILE);
+            byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
+            fis.read(encodedPrivateKey);
+            fis.close();
+
+            // Generate KeyPair.
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(
+                            encodedPublicKey);
+            PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(
+                            encodedPrivateKey);
+            PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
+
+            return new KeyPair(publicKey, privateKey);
     }
 }

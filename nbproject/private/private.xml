@@ -5,9 +5,11 @@
         <group>
             <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/Client.java</file>
             <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/Server.java</file>
+            <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/SenderGUI.java</file>
             <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/ServerThread.java</file>
             <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/LoginGUI.java</file>
             <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/ClientGUI.java</file>
+            <file>file:/C:/Users/Will/Documents/CS/EmailProject/src/secureemail/RegisterGUI.java</file>
         </group>
     </open-files>
 </project-private>

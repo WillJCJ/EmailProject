@@ -137,19 +137,12 @@ public class RegisterGUI extends javax.swing.JFrame {
         String username = jTextField1.getText();
         char[] password = jPasswordField1.getPassword();
         if (Arrays.equals(password, jPasswordField2.getPassword())){
-            try {
-                byte[] salt = sendAndReceive("NEWS").getBytes();
-                byte[] hash = hash(password, salt);
-                String hashString = Arrays.toString(hash);
-                String backFromServer = sendAndReceive("NEWU" + username +"."+ hashString);
-                if (backFromServer.equals("ACCEPT")){
-                    JOptionPane.showMessageDialog(this, "Thank you for registering, please log in.");
-                    this.setVisible(false);
-                }else{
-                    JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.");
-                }
-            } catch (NoSuchAlgorithmException e) {
-                System.err.println(e);
+            String backFromServer = sendAndReceive("NEWU" + username +"."+ Arrays.toString(password));
+            if (backFromServer.equals("ACCEPT")){
+                JOptionPane.showMessageDialog(this, "Thank you for registering, please log in.");
+                this.setVisible(false);
+            }else{
+                JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.");
             }
         }else{
             JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.");
@@ -166,4 +159,21 @@ public class RegisterGUI extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField1;
     private javax.swing.JButton registerButton;
     // End of variables declaration//GEN-END:variables
+
+    public String bytesToHex(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+                result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
+    
+    public static byte[] hexToBytes(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
 }
