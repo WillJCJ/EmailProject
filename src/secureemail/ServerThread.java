@@ -2,10 +2,13 @@ package secureemail;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.*;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -15,8 +18,8 @@ public class ServerThread implements Runnable{
     private DataOutputStream outToClient;
     private Socket clientSocket;
     
-    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\client\\public";
-    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\client\\private";
+    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\server\\public";
+    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\keys\\server\\private";
     
     private Connection conn = null;
     
@@ -55,6 +58,7 @@ public class ServerThread implements Runnable{
         boolean accepted = false;
         String output;
         String username;
+        String encryptedPassword;
         String suppliedPassword;
         String[] parts; //split on '.' into a maximum of 2 strings
         username = "";
@@ -75,7 +79,8 @@ public class ServerThread implements Runnable{
                 suppliedPassword = "";
                 parts = receivedFromClient.split("\\.",2); //split on '.' into a maximum of 3 strings
                 username = parts[0];
-                suppliedPassword = parts[1];
+                encryptedPassword = parts[1];
+                suppliedPassword = decryptPassword(encryptedPassword);
                 if (checkClientPassword(username, suppliedPassword)){
                     accepted = true;
                     System.out.println("Password accepted");
@@ -93,18 +98,28 @@ public class ServerThread implements Runnable{
                 String messageContents;
                 parts = receivedFromClient.split("\\.",3);
                 messageTargetUser = parts[0];
-                //messageSignature = parts[1];
-                messageContents = parts[1];
-                if(addMessage(username, messageTargetUser, messageContents, "sig")){
+                messageSignature = parts[1];
+                messageContents = parts[2];
+                if(addMessage(username, messageTargetUser, messageContents, messageSignature)){
                     output = "ACCEPT";
                 }
                 else{
                     output = "DECLINE";
                 }
             }
-            //Ask for a client's salt
-            else if (headerCode.equals("SALT")){
-                output = getClientSalt(receivedFromClient);
+            //Ask for a server's public key
+            else if (headerCode.equals("PUBK")){
+                String pubKey = "";
+                try {
+                    KeyPair kp = loadKeyPair();
+                    PublicKey pub = kp.getPublic();
+                    X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(pub.getEncoded());
+                    byte[] outputBytes = x509EncodedKeySpec.getEncoded();
+                    pubKey = bytesToHex(outputBytes);
+                } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
+                    Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                output = pubKey;
             }
             //New User
             else if (headerCode.equals("NEWU")){
@@ -279,7 +294,6 @@ public class ServerThread implements Runnable{
     }
     
     public boolean checkClientPassword(String username, String givenPassword){
-        String givenPasswordHash = "";
         ArrayList<String> fields = new ArrayList<String>();
         ArrayList<String> user = new ArrayList<String>();
         fields.add("passwordHash");
@@ -328,26 +342,29 @@ public class ServerThread implements Runnable{
         }
         return data;
     }
-
-    public void saveKeyPair(KeyPair keyPair) throws IOException {
-        PrivateKey privateKey = keyPair.getPrivate();
-        PublicKey publicKey = keyPair.getPublic();
-
-        // Store Public Key.
-        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
-                        publicKey.getEncoded());
-        FileOutputStream fos = new FileOutputStream(PUBLIC_KEY_FILE);
-        fos.write(x509EncodedKeySpec.getEncoded());
-        fos.close();
-
-        // Store Private Key.
-        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
-                        privateKey.getEncoded());
-        fos = new FileOutputStream(PRIVATE_KEY_FILE);
-        fos.write(pkcs8EncodedKeySpec.getEncoded());
-        fos.close();
+    
+    public String decryptString(byte[] inputBytes, PrivateKey privKey) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
+        String output = "";
+        try {
+            Cipher decrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            decrypt.init(Cipher.DECRYPT_MODE, privKey);
+            output = new String(decrypt.doFinal(inputBytes), StandardCharsets.UTF_8);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return output;
     }
-
+    
+    public String decryptPassword(String encryptedPassword){
+        String decryptedPassword = "";
+        try {
+            PrivateKey privKey = loadKeyPair().getPrivate();
+            decryptedPassword = decryptString(hexToBytes(encryptedPassword), privKey);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return decryptedPassword;
+    }
     public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
             // Read Public Key.
             File filePublicKey = new File(PUBLIC_KEY_FILE);

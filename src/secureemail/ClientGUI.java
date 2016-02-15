@@ -212,7 +212,7 @@ public class ClientGUI extends javax.swing.JFrame {
         try {
             KeyPair kp = genKeyPair();
             saveKeyPair(kp);
-            dumpKeyPair(kp);
+            printKeyPair(kp);
         } catch (Exception ex) {
             Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -225,7 +225,7 @@ public class ClientGUI extends javax.swing.JFrame {
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         try {
             KeyPair kp = loadKeyPair();
-            dumpKeyPair(kp);
+            printKeyPair(kp);
         } catch (Exception ex) {
             Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -253,87 +253,6 @@ public class ClientGUI extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField3;
     // End of variables declaration//GEN-END:variables
     
-//    public static void saveKey() throws NoSuchAlgorithmException, InvalidKeySpecException, FileNotFoundException, IOException, NoSuchProviderException{
-//        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", "SUN");
-//        SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-//        kpg.initialize(2048, random);
-//
-//        KeyPair kp = kpg.genKeyPair();
-//
-//        KeyFactory fact = KeyFactory.getInstance("DSA", "SUN");
-//
-//        byte[] pubKey = kp.getPublic().getEncoded();
-//        FileOutputStream pubos = new FileOutputStream(PUBLIC_KEY_FILE);
-//        pubos.write(pubKey);
-//        pubos.close();
-//
-//        byte[] privKey = kp.getPrivate().getEncoded();
-//        FileOutputStream privos = new FileOutputStream(PRIVATE_KEY_FILE);
-//        privos.write(privKey);
-//        privos.close();
-//    }
-//
-//    private static void saveToFile(String fileName, BigInteger mod, BigInteger exp) {
-//        ObjectOutputStream oout = null;
-//        try {
-//            oout = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(fileName)));
-//            oout.writeObject(mod);
-//            oout.writeObject(exp);
-//        } catch (IOException ex) {
-//            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-//        } finally {
-//            try {
-//                oout.close();
-//            } catch (IOException ex) {
-//                Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        }
-//    }
-//
-//    private static PrivateKey readPrivateKey() throws FileNotFoundException, IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException{
-////        InputStream in = new FileInputStream(PRIVATE_KEY_FILE);
-////        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
-////        BigInteger m = (BigInteger) oin.readObject();
-////        BigInteger e = (BigInteger) oin.readObject();
-////        RSAPublicKeySpec keySpec = new RSAPublicKeySpec(m, e);
-////        KeyFactory fact = KeyFactory.getInstance("DSA", "SUN");
-////        PrivateKey privKey = fact.generatePrivate(keySpec);
-////        return privKey;
-//        FileInputStream privfis = new FileInputStream(PRIVATE_KEY_FILE);
-//        byte[] encKey = new byte[privfis.available()];  
-//        privfis.read(encKey);
-//
-//        privfis.close();
-//        
-//        X509EncodedKeySpec privKeySpec = new X509EncodedKeySpec(encKey);
-//        
-//        KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
-//        PrivateKey privKey = keyFactory.generatePrivate(privKeySpec);
-//        return privKey;
-//    }
-//
-//    private static PublicKey readPublicKey() throws FileNotFoundException, IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException{
-////        InputStream in = new FileInputStream(PUBLIC_KEY_FILE);
-////        ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
-////        BigInteger m = (BigInteger) oin.readObject();
-////        BigInteger e = (BigInteger) oin.readObject();
-////        RSAPublicKeySpec keySpec = new RSAPublicKeySpec(m, e);
-////        KeyFactory fact = KeyFactory.getInstance("RSA");
-////        PublicKey pubKey = fact.generatePublic(keySpec);
-////        return pubKey;
-//        FileInputStream pubfis = new FileInputStream(PUBLIC_KEY_FILE);
-//        byte[] encKey = new byte[pubfis.available()];  
-//        pubfis.read(encKey);
-//
-//        pubfis.close();
-//        
-//        X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encKey);
-//        
-//        KeyFactory keyFactory = KeyFactory.getInstance("DSA", "SUN");
-//        PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
-//        return pubKey;
-//    }
-    
     public KeyPair genKeyPair() throws NoSuchAlgorithmException{
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048);
@@ -341,17 +260,17 @@ public class ClientGUI extends javax.swing.JFrame {
         return generatedKeyPair;
     }
     
-    public void dumpKeyPair(KeyPair keyPair) {
-        dumpPublicKey(keyPair);
-        dumpPrivateKey(keyPair);
+    public void printKeyPair(KeyPair keyPair) {
+        printPublicKey(keyPair);
+        printPrivateKey(keyPair);
     }
     
-    public void dumpPublicKey(KeyPair keyPair){
+    public void printPublicKey(KeyPair keyPair){
         PublicKey pub = keyPair.getPublic();
         System.out.println("Public Key: " + bytesToHex(pub.getEncoded()));
     }
     
-    public void dumpPrivateKey(KeyPair keyPair){
+    public void printPrivateKey(KeyPair keyPair){
         PrivateKey priv = keyPair.getPrivate();
         System.out.println("Private Key: " + bytesToHex(priv.getEncoded()));
     }

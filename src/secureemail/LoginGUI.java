@@ -197,8 +197,8 @@ public class LoginGUI extends javax.swing.JFrame {
         char[] password = jPasswordField1.getPassword();
         try {
             backFromServer = sendLoginDetails(username, password);
-        } catch (NoSuchAlgorithmException e) {
-            System.err.println("Could not check password: " + e);
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | InvalidKeySpecException ex) {
+            Logger.getLogger(LoginGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
         System.out.println(backFromServer);
         if (backFromServer.equals("DECLINE")){
@@ -244,17 +244,14 @@ public class LoginGUI extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(LoginGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(LoginGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(LoginGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(LoginGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
         //</editor-fold> 
+        
+        //</editor-fold>
+        //</editor-fold>
         
         while (!connected) {            
             try {
@@ -326,12 +323,13 @@ public class LoginGUI extends javax.swing.JFrame {
         return hash;
     }
     
-    public static String sendLoginDetails(String username, char[] password) throws NoSuchAlgorithmException{
-        return sendAndReceive("LOGN" + username + "." + Arrays.toString(password));
+    public String sendLoginDetails(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException{
+        byte[] encryptedPassword = encryptString(Arrays.toString(password), getServerPubKey());
+        return sendAndReceive("LOGN" + username + "." + bytesToHex(encryptedPassword));
     }
     
     public PublicKey getServerPubKey() throws InvalidKeySpecException, NoSuchAlgorithmException{
-        String pubKeyText = sendAndReceive("PUBK\n");
+        String pubKeyText = sendAndReceive("PUBK");
         byte[] keyBytes = hexToBytes(pubKeyText);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(keyBytes);
@@ -357,11 +355,12 @@ public class LoginGUI extends javax.swing.JFrame {
     }
     
     public byte[] encryptString(String inputString, PublicKey pubKey) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
-        // get an RSA cipher object and print the provider
-        final Cipher cipher = Cipher.getInstance(ALGORITHM);
-        // encrypt the plain text using the public key
-        cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-        byte[] cipherText = cipher.doFinal(inputString.getBytes());
-        return cipherText;
+        // specify mode and padding instead of relying on defaults (use OAEP if available!)
+        Cipher encrypt=Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        // init with the *public key*!
+        encrypt.init(Cipher.ENCRYPT_MODE, pubKey);
+        // encrypt with known character encoding, you should probably use hybrid cryptography instead 
+        byte[] encryptedMessage = encrypt.doFinal(inputString.getBytes(StandardCharsets.UTF_8));
+        return encryptedMessage;
     }
 }

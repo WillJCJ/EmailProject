@@ -173,7 +173,13 @@ public class SenderGUI extends javax.swing.JFrame {
         String targetUser = jTextField1.getText();
         String subject = jTextField3.getText();
         String message = jTextArea1.getText();
-        backFromServer = sendAndReceive("SEND" + targetUser + ". " + message);
+        String signature = "";
+        try {
+            signature = signString(message, loadKeyPair().getPrivate());
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | IOException | InvalidKeySpecException ex) {
+            Logger.getLogger(SenderGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        backFromServer = sendAndReceive("SEND" + targetUser + "." + signature + "." + message);
         if (backFromServer.equals("DECLINE")){
             JOptionPane.showMessageDialog(this, "Could not send message, please try again later.");
         }
@@ -190,8 +196,8 @@ public class SenderGUI extends javax.swing.JFrame {
     private void sendButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendButton1ActionPerformed
         try {
             String message = jTextArea1.getText();
-            byte[] sig = signString(message, loadKeyPair().getPrivate());
-            System.out.println(Arrays.toString(sig));
+            String sig = signString(message, loadKeyPair().getPrivate());
+            System.out.println(sig);
         } catch (Exception ex) {
             Logger.getLogger(SenderGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -212,12 +218,30 @@ public class SenderGUI extends javax.swing.JFrame {
     private javax.swing.JButton sendButton1;
     // End of variables declaration//GEN-END:variables
     
-    public byte[] signString(String s, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException{
+    public String signString(String s, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException{
         Signature instance = Signature.getInstance("SHA1withRSA");
         instance.initSign(privateKey);
         instance.update((s).getBytes());
-        byte[] signature = instance.sign();
+        byte[] signatureBytes = instance.sign();
+        String signature = bytesToHex(signatureBytes);
         return signature;
+    }
+
+    public String bytesToHex(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+                result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
+    
+    public static byte[] hexToBytes(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 
     public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
