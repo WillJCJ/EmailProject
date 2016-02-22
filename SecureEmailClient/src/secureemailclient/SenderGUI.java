@@ -8,6 +8,7 @@ package secureemailclient;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
+import java.net.URL;
 import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -29,13 +30,19 @@ public class SenderGUI extends javax.swing.JFrame {
     
 //    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\public";
 //    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\private";
-    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\public";
-    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\private";
+    private static String PUBLIC_KEY_FILE;
+    private static String PRIVATE_KEY_FILE;
     
     /**
      * Creates new form senderGUI
      */
     public SenderGUI(Socket socket) {
+        
+        URL pubUrl = getClass().getResource("keys/public");
+        URL privUrl = getClass().getResource("keys/private");
+        PUBLIC_KEY_FILE = pubUrl.getPath();
+        PRIVATE_KEY_FILE = privUrl.getPath();
+        
         initComponents();
         clientSocket = socket;
         try{

@@ -2,6 +2,7 @@ package secureemailserver;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.*;
@@ -20,8 +21,8 @@ public class ServerThread implements Runnable{
     
 //    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\public";
 //    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\private";
-    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\public";
-    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\private";
+    private static  String PUBLIC_KEY_FILE;
+    private static  String PRIVATE_KEY_FILE;
     
     private Connection conn = null;
     
@@ -40,6 +41,12 @@ public class ServerThread implements Runnable{
 //    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
     
     public ServerThread(Socket socket){
+        
+        URL pubUrl = getClass().getResource("keys/public");
+        URL privUrl = getClass().getResource("keys/private");
+        PUBLIC_KEY_FILE = pubUrl.getPath();
+        PRIVATE_KEY_FILE = privUrl.getPath();
+        
         clientSocket = socket;
         try{
             inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));

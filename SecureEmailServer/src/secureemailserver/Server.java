@@ -4,6 +4,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -18,10 +19,16 @@ public class Server{
     
 //    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\public";
 //    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\private";
-    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\public";
-    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\private";
+    private static String PUBLIC_KEY_FILE;
+    private static String PRIVATE_KEY_FILE;
     
     public static void main(String[] args){
+        
+        URL pubUrl = Server.class.getResource("keys/public");
+        URL privUrl = Server.class.getResource("keys/private");
+        PUBLIC_KEY_FILE = pubUrl.getPath();
+        PRIVATE_KEY_FILE = privUrl.getPath();
+        System.out.println(PUBLIC_KEY_FILE);
     
         try {
             create(18300);
