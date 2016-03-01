@@ -5,13 +5,18 @@
  */
 package secureemailclient;
 
+import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 import static secureemailclient.LoginGUI.*;
+import static secureemailclient.ClientGUI.*;
 
 /**
  *
@@ -19,6 +24,8 @@ import static secureemailclient.LoginGUI.*;
  */
 public class RegisterGUI extends javax.swing.JFrame {
 
+    public static String PUBLIC_KEY_FILE;
+    public static String PRIVATE_KEY_FILE;
     /**
      * Creates new form RegisterGUI
      */
@@ -139,22 +146,49 @@ public class RegisterGUI extends javax.swing.JFrame {
     private void registerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registerButtonActionPerformed
         String username = jTextField1.getText();
         char[] password = jPasswordField1.getPassword();
-        if (Arrays.equals(password, jPasswordField2.getPassword())){
+        boolean accepted = true;
+        if(password.length < 6){
+            JOptionPane.showMessageDialog(this, "Password too short. Passwords must be at least 6 characters in length");
+            accepted = false;
+        }
+        else if(password.length > 128){
+            JOptionPane.showMessageDialog(this, "Password too long. Passwords must be at most 127 characters in length");
+            accepted = false;
+        }
+        else if(username.length() < 4){
+            JOptionPane.showMessageDialog(this, "Username too short. Usernames must be at least 4 characters in length");
+            accepted = false;
+        }
+        else if(username.length() > 20){
+            JOptionPane.showMessageDialog(this, "Username too long. Usernames must be at most 20 characters in length");
+            accepted = false;
+        }
+        else if (!Arrays.equals(password, jPasswordField2.getPassword())){
+            JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.");
+            accepted = false;
+        }
+        if (accepted){
             byte[] encryptedPassword = null;
             try {
                 encryptedPassword = encryptString(Arrays.toString(password), getServerPubKey());
-                
             } catch (NoSuchPaddingException | BadPaddingException | NoSuchAlgorithmException | InvalidKeyException | InvalidKeySpecException | IllegalBlockSizeException ex) {
+                System.err.println("Error encrypting password: "+ex);
             }
-            String backFromServer = sendAndReceive("NEWU" + username +"."+ bytesToHex(encryptedPassword));
+            String publicKeyString = "";
+            try {
+                KeyPair kp = genKeyPair();
+                saveKeyPair(kp);
+                publicKeyString = bytesToHex(kp.getPublic().getEncoded());
+            } catch (NoSuchAlgorithmException | IOException ex) {
+                System.err.println("Error creating and saving key: " + ex);
+            }
+            String backFromServer = sendAndReceive("NEWU" + bytesToHex(encryptedPassword) +"."+ publicKeyString +"."+ username);
             if (backFromServer.equals("ACCEPT")){
                 JOptionPane.showMessageDialog(this, "Thank you for registering, please log in.");
                 this.setVisible(false);
             }else{
                 JOptionPane.showMessageDialog(this, "Error adding user. Username may already exist.");
             }
-        }else{
-            JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.");
         }
     }//GEN-LAST:event_registerButtonActionPerformed
 
@@ -176,23 +210,6 @@ public class RegisterGUI extends javax.swing.JFrame {
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(keyBytes);
         PublicKey pubKey = keyFactory.generatePublic(publicKeySpec);
         return pubKey;
-    }
-
-    public static String bytesToHex(byte[] bytes){
-        String result = "";
-        for (int i = 0; i < bytes.length; i++) {
-                result += Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1);
-        }
-        return result;
-    }
-    
-    public static byte[] hexToBytes(String s){
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
-        }
-        return data;
     }
     
     public byte[] encryptString(String inputString, PublicKey pubKey) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{

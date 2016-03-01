@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.*;
 import javax.crypto.spec.*;
+import secureemailclient.Message;
 
 public class ServerThread implements Runnable{
     private String request;
@@ -29,16 +30,16 @@ public class ServerThread implements Runnable{
     private static final Random RANDOM = new SecureRandom();
 
     //  Database credentials
-//    private static final String USER = "root";
-//    private static final String PASS = "MySQL0905";
-//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-//    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
+    private static final String USER = "root";
+    private static final String PASS = "MySQL0905";
+    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
 
 //    //  Database credentials
-    private static final String USER = "spgw33";
-    private static final String PASS = "fra84nce";
-    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
+//    private static final String USER = "spgw33";
+//    private static final String PASS = "fra84nce";
+//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+//    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
     
     public ServerThread(Socket socket){
         
@@ -72,11 +73,11 @@ public class ServerThread implements Runnable{
         
         boolean accepted = false;
         String output = "DECLINE";
-        String username;
-        String encryptedPassword;
-        String suppliedPassword;
+        String username = "";
+        String encryptedPassword = "";
+        String suppliedPassword = "";
+        String publicKeyString = "";
         String[] parts; //split on '.' into a maximum of 2 strings
-        username = "";
         
         while (true){
             try{
@@ -103,6 +104,24 @@ public class ServerThread implements Runnable{
                 }
                 else{
                     System.out.println("Password incorrect");
+                }
+            }
+            //Get Messages
+            if (headerCode.equals("GETM")){
+                ArrayList<Message> messages = getClientMessages(username);
+                output = "";
+                for(Message m : messages){
+                    try {
+                        output = output + "." + messageToHex(m);
+                    } catch (IOException ex) {
+                        Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                try{
+                    output = output.substring(1);
+                } catch (StringIndexOutOfBoundsException e){
+                    System.err.println("String too short: " + e);
+                    output = "DECLINE";
                 }
             }
             //Send a message (Must have logged in)
@@ -134,11 +153,13 @@ public class ServerThread implements Runnable{
             }
             //New User
             else if (headerCode.equals("NEWU")){
-                parts = receivedFromClient.split("\\.",2);
-                username = parts[0];
-                encryptedPassword = parts[1];
+                parts = receivedFromClient.split("\\.",3);
+                System.out.println(parts);
+                encryptedPassword = parts[0];
+                publicKeyString = parts[1];
+                username = parts[2];
                 suppliedPassword = decryptPassword(encryptedPassword);
-                if(addClient(username, suppliedPassword, "Change this later")){
+                if(addClient(username, suppliedPassword, publicKeyString)){
                     output = "ACCEPT";
                 }
             }
@@ -188,12 +209,11 @@ public class ServerThread implements Runnable{
         String sql;
         String fieldString = "";
         for(String field : fields){
-            fieldString = ", " + fieldString + field;
+            fieldString = fieldString + ", " + field;
         }
         //remove first ", "
         fieldString = fieldString.substring(2);
         
-        System.out.println("Query: " + "SELECT "+fieldString+" FROM "+table+" WHERE "+whereConstraint);
         ResultSet rs = st.executeQuery("SELECT "+fieldString+" FROM "+table+" WHERE "+whereConstraint);
         
         //Extract data from result set
@@ -260,16 +280,23 @@ public class ServerThread implements Runnable{
         return false;
     }
     
-    public ArrayList<ArrayList<String>> getClientMessages(String username){
-        ArrayList<ArrayList<String>> messages = new ArrayList<ArrayList<String>>();
+    public ArrayList<Message> getClientMessages(String username){
+        ArrayList<ArrayList<String>> messageStrings = new ArrayList<ArrayList<String>>();
+        ArrayList<Message> messages = new ArrayList<Message>();
         ArrayList<String> fields = new ArrayList<String>();
-        fields.add("senderID");
+        fields.add("senderUser");
         fields.add("messageContents");
         fields.add("messageSignature");
         try {
-            messages = queryDB("messages", fields, "username = "+username);
+            messageStrings = queryDB("messages", fields, "targetUser = '"+username+"'");
         } catch (SQLException e) {
             System.err.println("Error fetching messages from database: " + e);
+        }
+        for (ArrayList<String> messageString : messageStrings){
+            String senderUser = messageString.get(0);
+            String messageContents = messageString.get(1);
+            String messageSignature = messageString.get(2);
+            messages.add(new Message(senderUser, username, "Subject", messageContents, messageSignature));
         }
         return messages;
     }
@@ -315,6 +342,24 @@ public class ServerThread implements Runnable{
         } finally {
             spec.clearPassword();
         }
+    }
+    
+    public String messageToHex(Message message) throws IOException{
+        String hexString = "";
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(message);
+        byte[] buf = baos.toByteArray();
+        hexString = bytesToHex(buf);
+        return hexString;
+    }
+    
+    public Message hexToMessage(String hexString) throws IOException, ClassNotFoundException{
+        ObjectInputStream ois =
+        new ObjectInputStream(new ByteArrayInputStream(hexToBytes(hexString)));
+        Message message = (Message) ois.readObject();
+        ois.close();
+        return message;
     }
         
     public static boolean checkPass (String givenPassword, byte[] salt, byte[] expectedHash) {

@@ -13,6 +13,7 @@ import java.security.*;
 import java.security.spec.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import static secureemailclient.LoginGUI.sendAndReceive;
 
 /**
@@ -23,22 +24,30 @@ public class ClientGUI extends javax.swing.JFrame {
     private static Socket clientSocket;
     private static String backFromServer;
     
-//    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\public";
-//    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\private";
-    private static String PUBLIC_KEY_FILE;
-    private static String PRIVATE_KEY_FILE;
+    public static String PUBLIC_KEY_FILE;
+    public static String PRIVATE_KEY_FILE;
 
     /**
      * Creates new form ClientGUI
      */
     public ClientGUI(Socket socket) {
-        initComponents();
         clientSocket = socket;
         
         URL pubUrl = getClass().getResource("keys/public");
         URL privUrl = getClass().getResource("keys/private");
         PUBLIC_KEY_FILE = pubUrl.getPath();
         PRIVATE_KEY_FILE = privUrl.getPath();
+        
+        initComponents();
+    }
+    
+    public ClientGUI(Socket socket, String pubKeyFile, String privKeyFile) {
+        clientSocket = socket;
+        
+        PUBLIC_KEY_FILE = pubKeyFile;
+        PRIVATE_KEY_FILE = privKeyFile;
+        
+        initComponents();
     }
 
     /**
@@ -64,6 +73,7 @@ public class ClientGUI extends javax.swing.JFrame {
         jTextArea1 = new javax.swing.JTextArea();
         jScrollPane3 = new javax.swing.JScrollPane();
         jList1 = new javax.swing.JList<>();
+        getMessageButton = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenu2 = new javax.swing.JMenu();
@@ -114,6 +124,13 @@ public class ClientGUI extends javax.swing.JFrame {
         jList1.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jScrollPane3.setViewportView(jList1);
 
+        getMessageButton.setText("Get Messages");
+        getMessageButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                getMessageButtonActionPerformed(evt);
+            }
+        });
+
         jMenu1.setText("File");
         jMenuBar1.add(jMenu1);
 
@@ -132,7 +149,9 @@ public class ClientGUI extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(newMessageButton, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(keyButton, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(keyButton, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(getMessageButton, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jScrollPane3))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 7, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -144,11 +163,11 @@ public class ClientGUI extends javax.swing.JFrame {
                     .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 324, Short.MAX_VALUE)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 324, Short.MAX_VALUE)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 324, Short.MAX_VALUE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 324, Short.MAX_VALUE))
-                .addGap(22, 22, 22))
+                    .addComponent(jTextField3)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 296, Short.MAX_VALUE)
+                    .addComponent(jTextField1)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -171,15 +190,16 @@ public class ClientGUI extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(0, 388, Short.MAX_VALUE))
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE)))
+                                .addGap(0, 345, Short.MAX_VALUE))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE)))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(newMessageButton, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(keyButton, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(keyButton, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(getMessageButton, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 471, Short.MAX_VALUE))
-                    .addComponent(jSeparator1, javax.swing.GroupLayout.DEFAULT_SIZE, 526, Short.MAX_VALUE))
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE))
+                    .addComponent(jSeparator1, javax.swing.GroupLayout.DEFAULT_SIZE, 483, Short.MAX_VALUE))
                 .addContainerGap())
         );
 
@@ -195,14 +215,40 @@ public class ClientGUI extends javax.swing.JFrame {
         try {
             KeyPair kp = genKeyPair();
             saveKeyPair(kp);
-            printKeyPair(kp);
             sendAndReceive("NKEY"+bytesToHex(kp.getPublic().getEncoded()));
         } catch (Exception ex) {
             Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_keyButtonActionPerformed
 
+    private void getMessageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_getMessageButtonActionPerformed
+        String received = sendAndReceive("GETM");
+        if (received.equals("DECLINE")){
+            JOptionPane.showMessageDialog(this, "No new messages.");
+        }
+        else{
+            String[] parts = received.split("\\.");
+            for (String s : parts){
+                try {
+                    Message message = hexToMessage(s);
+                    PublicKey publicKey;
+                    try {
+                        publicKey = loadKeyPair().getPublic();
+                        System.out.println("Verified: " + message.verifySignature(publicKey));
+                    } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+                        Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    System.out.println(message);
+                } catch (IOException | ClassNotFoundException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        
+    }//GEN-LAST:event_getMessageButtonActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton getMessageButton;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -222,29 +268,47 @@ public class ClientGUI extends javax.swing.JFrame {
     private javax.swing.JButton newMessageButton;
     // End of variables declaration//GEN-END:variables
     
-    public KeyPair genKeyPair() throws NoSuchAlgorithmException{
+    public static KeyPair genKeyPair() throws NoSuchAlgorithmException{
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048);
         KeyPair generatedKeyPair = keyGen.genKeyPair();
         return generatedKeyPair;
     }
     
-    public void printKeyPair(KeyPair keyPair) {
+    public static void printKeyPair(KeyPair keyPair) {
         printPublicKey(keyPair);
         printPrivateKey(keyPair);
     }
     
-    public void printPublicKey(KeyPair keyPair){
+    public static void printPublicKey(KeyPair keyPair){
         PublicKey pub = keyPair.getPublic();
         System.out.println("Public Key: " + bytesToHex(pub.getEncoded()));
     }
     
-    public void printPrivateKey(KeyPair keyPair){
+    public static void printPrivateKey(KeyPair keyPair){
         PrivateKey priv = keyPair.getPrivate();
         System.out.println("Private Key: " + bytesToHex(priv.getEncoded()));
     }
+    
+    public static String messageToHex(Message message) throws IOException{
+        String hexString = "";
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(message);
+        byte[] buf = baos.toByteArray();
+        hexString = bytesToHex(buf);
+        return hexString;
+    }
+    
+    public static Message hexToMessage(String hexString) throws IOException, ClassNotFoundException{
+        ObjectInputStream ois =
+        new ObjectInputStream(new ByteArrayInputStream(hexToBytes(hexString)));
+        Message message = (Message) ois.readObject();
+        ois.close();
+        return message;
+    }
 
-    public String bytesToHex(byte[] b) {
+    public static String bytesToHex(byte[] b) {
         String result = "";
         for (int i = 0; i < b.length; i++) {
                 result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
@@ -261,7 +325,7 @@ public class ClientGUI extends javax.swing.JFrame {
         return data;
     }
 
-    public void saveKeyPair(KeyPair keyPair) throws IOException {
+    public static void saveKeyPair(KeyPair keyPair) throws IOException {
         PrivateKey privateKey = keyPair.getPrivate();
         PublicKey publicKey = keyPair.getPublic();
 
@@ -280,7 +344,7 @@ public class ClientGUI extends javax.swing.JFrame {
         fos.close();
     }
 
-    public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public static KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
             // Read Public Key.
             File filePublicKey = new File(PUBLIC_KEY_FILE);
             FileInputStream fis = new FileInputStream(PUBLIC_KEY_FILE);

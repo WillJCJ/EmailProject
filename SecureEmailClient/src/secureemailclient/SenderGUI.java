@@ -76,7 +76,6 @@ public class SenderGUI extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
-        sendButton1 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -106,13 +105,6 @@ public class SenderGUI extends javax.swing.JFrame {
         jTextArea1.setRows(5);
         jScrollPane1.setViewportView(jTextArea1);
 
-        sendButton1.setText("Sign and print sig");
-        sendButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                sendButton1ActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -121,9 +113,7 @@ public class SenderGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 146, Short.MAX_VALUE)
-                        .addComponent(sendButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(sendButton, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -135,10 +125,10 @@ public class SenderGUI extends javax.swing.JFrame {
                             .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField3)
-                            .addComponent(jTextField2)
-                            .addComponent(jTextField1)
-                            .addComponent(jScrollPane1))))
+                            .addComponent(jTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE)
+                            .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -160,13 +150,12 @@ public class SenderGUI extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
+                        .addGap(0, 244, Short.MAX_VALUE))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 274, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(sendButton, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(sendButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(sendButton, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
@@ -183,34 +172,7 @@ public class SenderGUI extends javax.swing.JFrame {
         String subject = jTextField3.getText();
         String message = jTextArea1.getText();
         String signature = "";
-        try {
-            signature = signString(message, loadKeyPair().getPrivate());
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | IOException | InvalidKeySpecException ex) {
-            Logger.getLogger(SenderGUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        backFromServer = sendAndReceive("SEND" + targetUser + "." + signature + "." + message);
-        if (backFromServer.equals("DECLINE")){
-            JOptionPane.showMessageDialog(this, "Could not send message, please try again later.");
-        }
-        if (backFromServer.equals("ACCEPT")){
-            JOptionPane.showMessageDialog(this, "Message sent.");
-            this.setVisible(false);
-            dispose();
-        }
-        else{
-            JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.");
-        }
     }//GEN-LAST:event_sendButtonActionPerformed
-
-    private void sendButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendButton1ActionPerformed
-        try {
-            String message = jTextArea1.getText();
-            String sig = signString(message, loadKeyPair().getPrivate());
-            System.out.println(sig);
-        } catch (Exception ex) {
-            Logger.getLogger(SenderGUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_sendButton1ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
@@ -224,18 +186,8 @@ public class SenderGUI extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField2;
     private javax.swing.JTextField jTextField3;
     private javax.swing.JButton sendButton;
-    private javax.swing.JButton sendButton1;
     // End of variables declaration//GEN-END:variables
     
-    public String signString(String s, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException{
-        Signature instance = Signature.getInstance("SHA1withRSA");
-        instance.initSign(privateKey);
-        instance.update((s).getBytes());
-        byte[] signatureBytes = instance.sign();
-        String signature = bytesToHex(signatureBytes);
-        return signature;
-    }
-
     public String bytesToHex(byte[] b) {
         String result = "";
         for (int i = 0; i < b.length; i++) {
@@ -253,6 +205,23 @@ public class SenderGUI extends javax.swing.JFrame {
         return data;
     }
 
+    public void sendMessage(String sender, String recipient, String subject, String contents) throws IOException{
+        Message m = new Message(sender, recipient, subject, contents);
+        String mesageHex = ClientGUI.messageToHex(m);
+        backFromServer = sendAndReceive("SEND" + mesageHex);
+        if (backFromServer.equals("DECLINE")){
+            JOptionPane.showMessageDialog(this, "Could not send message, please try again later.");
+        }
+        if (backFromServer.equals("ACCEPT")){
+            JOptionPane.showMessageDialog(this, "Message sent.");
+            this.setVisible(false);
+            dispose();
+        }
+        else{
+            JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.");
+        }
+    }   
+    
     public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         // Read Public Key.
         File filePublicKey = new File(PUBLIC_KEY_FILE);

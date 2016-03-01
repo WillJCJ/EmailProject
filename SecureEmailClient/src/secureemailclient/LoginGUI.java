@@ -7,6 +7,7 @@ package secureemailclient;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.*;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -21,6 +22,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.JOptionPane;
 import static sun.security.x509.CertificateAlgorithmId.ALGORITHM;
+import static secureemailclient.ClientGUI.*;
 
 /**
  *
@@ -40,6 +42,11 @@ public class LoginGUI extends javax.swing.JFrame {
      * Creates new form SecureEmailUI
      */
     public LoginGUI() {
+        URL pubUrl = getClass().getResource("keys/public");
+        URL privUrl = getClass().getResource("keys/private");
+        PUBLIC_KEY_FILE = pubUrl.getPath();
+        PRIVATE_KEY_FILE = privUrl.getPath();
+        
         initComponents();
     }
 
@@ -72,14 +79,17 @@ public class LoginGUI extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Login", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Microsoft YaHei", 1, 14))); // NOI18N
-
         jLabel2.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel2.setText("Account Name");
 
         jTextField1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jTextField1MouseClicked(evt);
+            }
+        });
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jTextField1KeyPressed(evt);
             }
         });
 
@@ -108,6 +118,12 @@ public class LoginGUI extends javax.swing.JFrame {
         jLabel6.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel6.setText("Don't have an account?");
 
+        jPasswordField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                jPasswordField1KeyPressed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -115,22 +131,21 @@ public class LoginGUI extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 281, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(10, 10, 10)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                .addGap(56, 56, 56)
-                                .addComponent(jLabel5)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(resetPasswordButton))
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel6)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(registerButton)))
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.TRAILING)
+                                .addGap(10, 10, 10)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                                        .addGap(56, 56, 56)
+                                        .addComponent(jLabel5)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(resetPasswordButton))
+                                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                        .addComponent(jLabel6)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(registerButton))))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                     .addComponent(jLabel2)
@@ -141,9 +156,9 @@ public class LoginGUI extends javax.swing.JFrame {
                                     .addGroup(jPanel1Layout.createSequentialGroup()
                                         .addGap(11, 11, 11)
                                         .addComponent(loginButton, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jPasswordField1))
-                                .addGap(0, 0, Short.MAX_VALUE)))
-                        .addContainerGap())))
+                                    .addComponent(jPasswordField1))))
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -207,7 +222,7 @@ public class LoginGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Username or password incorrect, please re-enter your details.");
         }
         if (backFromServer.equals("ACCEPT")){
-            ClientGUI clientGUI = new ClientGUI(clientSocket);
+            ClientGUI clientGUI = new ClientGUI(clientSocket, PUBLIC_KEY_FILE, PRIVATE_KEY_FILE);
             this.setVisible(false);
             dispose();
             clientGUI.setVisible(true);
@@ -221,6 +236,18 @@ public class LoginGUI extends javax.swing.JFrame {
         RegisterGUI regGUI = new RegisterGUI();
         regGUI.setVisible(true);
     }//GEN-LAST:event_registerButtonActionPerformed
+
+    private void jPasswordField1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordField1KeyPressed
+        if(evt.getKeyCode() == 10){
+            loginButtonActionPerformed(null);
+        }
+    }//GEN-LAST:event_jPasswordField1KeyPressed
+
+    private void jTextField1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyPressed
+        if(evt.getKeyCode() == 10){
+            loginButtonActionPerformed(null);
+        }
+    }//GEN-LAST:event_jTextField1KeyPressed
 
     /**
      * @param args the command line arguments
@@ -336,23 +363,6 @@ public class LoginGUI extends javax.swing.JFrame {
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(keyBytes);
         PublicKey pubKey = keyFactory.generatePublic(publicKeySpec);
         return pubKey;
-    }
-
-    public static String bytesToHex(byte[] bytes){
-        String result = "";
-        for (int i = 0; i < bytes.length; i++) {
-                result += Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1);
-        }
-        return result;
-    }
-    
-    public static byte[] hexToBytes(String s){
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
-        }
-        return data;
     }
     
     public byte[] encryptString(String inputString, PublicKey pubKey) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
