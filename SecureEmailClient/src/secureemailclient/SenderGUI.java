@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import static secureemailclient.ClientGUI.*;
 import static secureemailclient.LoginGUI.*;
 
 /**
@@ -22,28 +23,20 @@ import static secureemailclient.LoginGUI.*;
  * @author Will
  */
 public class SenderGUI extends javax.swing.JFrame {
-    private static Socket clientSocket;
-    private static String backFromServer;
+    private Socket clientSocket;
+    private String backFromServer;
     
-    private static DataOutputStream outToServer;
-    private static BufferedReader inFromServer;
+    private DataOutputStream outToServer;
+    private BufferedReader inFromServer;
     
-//    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\public";
-//    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailClient\\keys\\private";
-    private static String PUBLIC_KEY_FILE;
-    private static String PRIVATE_KEY_FILE;
+    private String username;
     
     /**
      * Creates new form senderGUI
      */
-    public SenderGUI(Socket socket) {
+    public SenderGUI(Socket socket, String username) {
+        this.username = username;
         
-        URL pubUrl = getClass().getResource("keys/public");
-        URL privUrl = getClass().getResource("keys/private");
-        PUBLIC_KEY_FILE = pubUrl.getPath();
-        PRIVATE_KEY_FILE = privUrl.getPath();
-        
-        initComponents();
         clientSocket = socket;
         try{
             outToServer =
@@ -54,6 +47,11 @@ public class SenderGUI extends javax.swing.JFrame {
         }catch(Exception e){
             System.err.println("Could not set up input/output: " + e);
         }
+        
+        initComponents();
+        
+        contentsText.setLineWrap(true);
+        contentsText.setWrapStyleWord(true);
     }
 
     /**
@@ -68,17 +66,16 @@ public class SenderGUI extends javax.swing.JFrame {
         sendButton = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
-        jTextField2 = new javax.swing.JTextField();
-        jTextField3 = new javax.swing.JTextField();
+        subjectText = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        contentsText = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        sendButton.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         sendButton.setText("Send");
         sendButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -86,6 +83,7 @@ public class SenderGUI extends javax.swing.JFrame {
             }
         });
 
+        cancelButton.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         cancelButton.setText("Cancel");
         cancelButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -93,42 +91,51 @@ public class SenderGUI extends javax.swing.JFrame {
             }
         });
 
+        jLabel1.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel1.setText("To:");
 
-        jLabel2.setText("CC:");
-
+        jLabel3.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel3.setText("Subject:");
 
+        jTextField1.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
+        jTextField1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(130, 130, 130)));
+
+        subjectText.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
+        subjectText.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(130, 130, 130)));
+
+        jLabel4.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel4.setText("Message:");
 
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane1.setViewportView(jTextArea1);
+        jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(130, 130, 130)));
+
+        contentsText.setColumns(20);
+        contentsText.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
+        contentsText.setRows(5);
+        contentsText.setBorder(null);
+        jScrollPane1.setViewportView(contentsText);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(sendButton, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 54, Short.MAX_VALUE)
-                            .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel1)
+                            .addComponent(jLabel4))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE)
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 447, Short.MAX_VALUE))))
+                            .addComponent(subjectText, javax.swing.GroupLayout.DEFAULT_SIZE, 370, Short.MAX_VALUE)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 370, Short.MAX_VALUE)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 370, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -140,18 +147,14 @@ public class SenderGUI extends javax.swing.JFrame {
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(subjectText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 324, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 244, Short.MAX_VALUE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 274, Short.MAX_VALUE))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -169,23 +172,26 @@ public class SenderGUI extends javax.swing.JFrame {
 
     private void sendButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendButtonActionPerformed
         String targetUser = jTextField1.getText();
-        String subject = jTextField3.getText();
-        String message = jTextArea1.getText();
-        String signature = "";
+        String subject = subjectText.getText();
+        String contents = contentsText.getText();
+        try {
+            PrivateKey privateKey = loadKeyPair().getPrivate();
+            sendMessage(targetUser, subject, contents, privateKey);
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            ex.printStackTrace();
+        }
     }//GEN-LAST:event_sendButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
+    private javax.swing.JTextArea contentsText;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField3;
     private javax.swing.JButton sendButton;
+    private javax.swing.JTextField subjectText;
     // End of variables declaration//GEN-END:variables
     
     public String bytesToHex(byte[] b) {
@@ -196,7 +202,7 @@ public class SenderGUI extends javax.swing.JFrame {
         return result;
     }
     
-    public static byte[] hexToBytes(String s) {
+    public byte[] hexToBytes(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
@@ -205,10 +211,11 @@ public class SenderGUI extends javax.swing.JFrame {
         return data;
     }
 
-    public void sendMessage(String sender, String recipient, String subject, String contents) throws IOException{
-        Message m = new Message(sender, recipient, subject, contents);
-        String mesageHex = ClientGUI.messageToHex(m);
-        backFromServer = sendAndReceive("SEND" + mesageHex);
+    public void sendMessage(String recipient, String subject, String contents, PrivateKey privateKey) throws IOException{
+        Message m = new Message(username, recipient, subject, contents);
+        m.sign(privateKey);
+        String messageHex = ClientGUI.messageToHex(m);
+        backFromServer = sendAndReceive("SEND" + messageHex);
         if (backFromServer.equals("DECLINE")){
             JOptionPane.showMessageDialog(this, "Could not send message, please try again later.");
         }
@@ -220,33 +227,5 @@ public class SenderGUI extends javax.swing.JFrame {
         else{
             JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.");
         }
-    }   
-    
-    public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        // Read Public Key.
-        File filePublicKey = new File(PUBLIC_KEY_FILE);
-        FileInputStream fis = new FileInputStream(PUBLIC_KEY_FILE);
-        byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
-        fis.read(encodedPublicKey);
-        fis.close();
-
-        // Read Private Key.
-        File filePrivateKey = new File(PRIVATE_KEY_FILE);
-        fis = new FileInputStream(PRIVATE_KEY_FILE);
-        byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
-        fis.read(encodedPrivateKey);
-        fis.close();
-
-        // Generate KeyPair.
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(
-                        encodedPublicKey);
-        PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
-
-        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(
-                        encodedPrivateKey);
-        PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
-
-        return new KeyPair(publicKey, privateKey);
     }
 }

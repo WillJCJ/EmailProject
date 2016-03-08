@@ -7,21 +7,15 @@ package secureemailclient;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.URL;
 import java.nio.charset.*;
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.swing.JOptionPane;
-import static sun.security.x509.CertificateAlgorithmId.ALGORITHM;
+import java.util.logging.*;
+import javax.crypto.*;
+import javax.swing.*;
+import javax.swing.border.Border;
 import static secureemailclient.ClientGUI.*;
 
 /**
@@ -29,11 +23,11 @@ import static secureemailclient.ClientGUI.*;
  * @author drawingoffice
  */
 public class LoginGUI extends javax.swing.JFrame {
-    private static String IP = "192.168.1.146";
+    public String ip;
+    public int serverPort = 18300;
     
-    private static Socket clientSocket;
-    private static String backFromServer;
-    private static final Random RANDOM = new SecureRandom();
+    private Socket clientSocket;
+    private String backFromServer;
     
     private static DataOutputStream outToServer;
     private static BufferedReader inFromServer;
@@ -41,13 +35,17 @@ public class LoginGUI extends javax.swing.JFrame {
     /**
      * Creates new form SecureEmailUI
      */
-    public LoginGUI() {
-        URL pubUrl = getClass().getResource("keys/public");
-        URL privUrl = getClass().getResource("keys/private");
-        PUBLIC_KEY_FILE = pubUrl.getPath();
-        PRIVATE_KEY_FILE = privUrl.getPath();
+    public LoginGUI(String ip) {
+        this.ip = ip;
+        
+        connect();
         
         initComponents();
+        this.setVisible(true);
+        
+        Border border = BorderFactory.createCompoundBorder(usernameField.getBorder(), BorderFactory.createEmptyBorder(1, 2, 1, 1));
+        usernameField.setBorder(border);
+        passwordField.setBorder(border);
     }
 
     /**
@@ -63,7 +61,7 @@ public class LoginGUI extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         jPanel1 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
+        usernameField = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         loginButton = new javax.swing.JButton();
         jSeparator1 = new javax.swing.JSeparator();
@@ -71,7 +69,7 @@ public class LoginGUI extends javax.swing.JFrame {
         registerButton = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
-        jPasswordField1 = new javax.swing.JPasswordField();
+        passwordField = new javax.swing.JPasswordField();
 
         jLabel1.setText("jLabel1");
 
@@ -82,20 +80,21 @@ public class LoginGUI extends javax.swing.JFrame {
         jLabel2.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel2.setText("Account Name");
 
-        jTextField1.addMouseListener(new java.awt.event.MouseAdapter() {
+        usernameField.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jTextField1MouseClicked(evt);
+                usernameFieldMouseClicked(evt);
             }
         });
-        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+        usernameField.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
-                jTextField1KeyPressed(evt);
+                usernameFieldKeyPressed(evt);
             }
         });
 
         jLabel3.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel3.setText("Password");
 
+        loginButton.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         loginButton.setText("Login");
         loginButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -103,8 +102,10 @@ public class LoginGUI extends javax.swing.JFrame {
             }
         });
 
+        resetPasswordButton.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         resetPasswordButton.setText("Reset Password");
 
+        registerButton.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         registerButton.setText("Register");
         registerButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -118,9 +119,9 @@ public class LoginGUI extends javax.swing.JFrame {
         jLabel6.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel6.setText("Don't have an account?");
 
-        jPasswordField1.addKeyListener(new java.awt.event.KeyAdapter() {
+        passwordField.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
-                jPasswordField1KeyPressed(evt);
+                passwordFieldKeyPressed(evt);
             }
         });
 
@@ -152,11 +153,11 @@ public class LoginGUI extends javax.swing.JFrame {
                                     .addComponent(jLabel3))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jTextField1, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
+                                    .addComponent(usernameField, javax.swing.GroupLayout.DEFAULT_SIZE, 186, Short.MAX_VALUE)
                                     .addGroup(jPanel1Layout.createSequentialGroup()
                                         .addGap(11, 11, 11)
                                         .addComponent(loginButton, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jPasswordField1))))
+                                    .addComponent(passwordField))))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -166,11 +167,11 @@ public class LoginGUI extends javax.swing.JFrame {
                 .addGap(21, 21, 21)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(usernameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(20, 20, 20)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
-                    .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(passwordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(loginButton)
                 .addGap(18, 18, 18)
@@ -206,12 +207,12 @@ public class LoginGUI extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTextField1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTextField1MouseClicked
-    }//GEN-LAST:event_jTextField1MouseClicked
+    private void usernameFieldMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_usernameFieldMouseClicked
+    }//GEN-LAST:event_usernameFieldMouseClicked
 
     private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginButtonActionPerformed
-        String username = jTextField1.getText();
-        char[] password = jPasswordField1.getPassword();
+        String username = usernameField.getText();
+        char[] password = passwordField.getPassword();
         try {
             backFromServer = sendLoginDetails(username, password);
         } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | InvalidKeySpecException ex) {
@@ -221,11 +222,10 @@ public class LoginGUI extends javax.swing.JFrame {
         if (backFromServer.equals("DECLINE")){
             JOptionPane.showMessageDialog(this, "Username or password incorrect, please re-enter your details.");
         }
-        if (backFromServer.equals("ACCEPT")){
-            ClientGUI clientGUI = new ClientGUI(clientSocket, PUBLIC_KEY_FILE, PRIVATE_KEY_FILE);
+        else if (backFromServer.equals("ACCEPT")){
+            ClientGUI clientGUI = new ClientGUI(clientSocket, username);
             this.setVisible(false);
             dispose();
-            clientGUI.setVisible(true);
         }
         else{
             JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.");
@@ -237,54 +237,79 @@ public class LoginGUI extends javax.swing.JFrame {
         regGUI.setVisible(true);
     }//GEN-LAST:event_registerButtonActionPerformed
 
-    private void jPasswordField1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordField1KeyPressed
+    private void passwordFieldKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_passwordFieldKeyPressed
         if(evt.getKeyCode() == 10){
             loginButtonActionPerformed(null);
         }
-    }//GEN-LAST:event_jPasswordField1KeyPressed
+    }//GEN-LAST:event_passwordFieldKeyPressed
 
-    private void jTextField1KeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyPressed
+    private void usernameFieldKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_usernameFieldKeyPressed
         if(evt.getKeyCode() == 10){
             loginButtonActionPerformed(null);
         }
-    }//GEN-LAST:event_jTextField1KeyPressed
+    }//GEN-LAST:event_usernameFieldKeyPressed
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
+//    public static void main(String args[]) {
+//        /* Create and display the form */
+//        java.awt.EventQueue.invokeLater(new Runnable() {
+//            public void run() {
+//                new LoginGUI("localhost").setVisible(true);
+//            }
+//        });
+//        
+//        /* Set the Nimbus look and feel */
+//        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+//        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+//         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+//         */
+//        try {
+//            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+//                if ("Nimbus".equals(info.getName())) {
+//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+//                    break;
+//                }
+//            }
+//        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+//            java.util.logging.Logger.getLogger(LoginGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        }
+//        //</editor-fold>
+//        //</editor-fold> 
+//        
+//        //</editor-fold>
+//        //</editor-fold>
+//
+//    }
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton2;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JButton loginButton;
+    private javax.swing.JPasswordField passwordField;
+    private javax.swing.JButton registerButton;
+    private javax.swing.JButton resetPasswordButton;
+    private javax.swing.JTextField usernameField;
+    // End of variables declaration//GEN-END:variables
+   
+    public void createSocket(String ip, int port) throws IOException{
+        System.out.println("Connecting to "+ip+":"+port);
+        clientSocket = new Socket (ip,port);
+        System.out.println("Connected");
+    }
+    
+    public void connect(){
         boolean connected = false;
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new LoginGUI().setVisible(true);
-            }
-        });
-        
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(LoginGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        //</editor-fold> 
-        
-        //</editor-fold>
-        //</editor-fold>
-        
-        while (!connected) {            
+        while (!connected) {
             try {
-                connect(IP, 18300); //Change this line depending on where you're connecting
+                createSocket(ip, serverPort); //Change this line depending on where you're connecting
                 connected = true;
                 try{
                     outToServer =
@@ -296,37 +321,13 @@ public class LoginGUI extends javax.swing.JFrame {
                     System.err.println("Could not set up input/output: " + e);
                 }
             } catch (IOException e) {
-                System.err.println("Could not connect to server: " + e + "\nTrying again in 5 seconds");
                 try {
-                    TimeUnit.SECONDS.sleep(5);
+                    TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException ex){
                     System.err.println("Could not sleep: " + ex);
                 }
             }
         }
-
-    }
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton2;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPasswordField jPasswordField1;
-    private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JButton loginButton;
-    private javax.swing.JButton registerButton;
-    private javax.swing.JButton resetPasswordButton;
-    // End of variables declaration//GEN-END:variables
-   
-    public static void connect(String ip, int port) throws IOException{
-        System.out.println("Connecting to "+ip+":"+port);
-        clientSocket = new Socket (ip,port);
-        System.out.println("Connected");
     }
     
     public static String sendAndReceive(String sentence){
@@ -343,7 +344,7 @@ public class LoginGUI extends javax.swing.JFrame {
         return (output);
     }
     
-    public static byte[] hash(String stringToHash, byte[] salt) throws NoSuchAlgorithmException {
+    public byte[] hash(String stringToHash, byte[] salt) throws NoSuchAlgorithmException {
         MessageDigest digest;
         byte[] hash;
         digest = MessageDigest.getInstance("SHA-256");

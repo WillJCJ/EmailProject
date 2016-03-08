@@ -6,10 +6,8 @@
 package secureemailclient;
 
 import java.security.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import static secureemailclient.ClientGUI.bytesToHex;
-import static secureemailclient.ClientGUI.hexToBytes;
+import java.security.spec.*;
+import java.util.logging.*;
 
 /**
  *
@@ -21,6 +19,8 @@ public class Message implements java.io.Serializable{
     private String subject;
     private String contents;
     private String signature;
+    private String signedPart;
+    private boolean verified;
     
     public Message(){
         this.sender = "null";
@@ -28,6 +28,8 @@ public class Message implements java.io.Serializable{
         this.subject = "null";
         this.contents = "null";
         this.signature = "null";
+        this.signedPart = "null";
+        this.verified = false;
     }
     
     public Message(String sender, String recipient, String subject, String contents, String signature){
@@ -36,6 +38,8 @@ public class Message implements java.io.Serializable{
         this.subject = subject;
         this.contents = contents;
         this.signature = signature;
+        this.signedPart = sender + recipient + subject + contents;
+        this.verified = false;
     }
     
     public Message(String sender, String recipient, String subject, String contents){
@@ -44,16 +48,18 @@ public class Message implements java.io.Serializable{
         this.subject = subject;
         this.contents = contents;
         this.signature = "null";
+        this.signedPart = sender + recipient + subject + contents;
+        this.verified = false;
     }
     
     
     @Override
     public String toString(){
         String message =
-                "To:       " + recipient + 
-                "\nFrom:     " + sender + 
+                "To:       " + recipient +
+                "\nFrom:     " + sender +
                 "\nSubject:  " + subject +
-                "\nContents: " + contents + 
+                "\nContents: " + contents +
                 "\nSignature: " + signature;
                 
         return message;
@@ -61,10 +67,21 @@ public class Message implements java.io.Serializable{
     
     public String toSmallString(){
         String message =
-                "\nFrom:     " + sender + 
+                "From:     " + sender +
                 "\nSubject:  " + subject;
                 
         return message;
+    }
+    
+    public String displayHTMLString(){
+        if (verified){
+            return "<html><font color=\"black\">Sender:  " + sender + "<br/>"
+                        + "Subject: " + subject + "</font></html>";
+        }
+        else{
+            return "<html><font color=\"red\">Sender:  " + sender + "<br/>"
+                        + "Subject: " + subject + "</font></html>";
+        }
     }
     
     public String getSender(){
@@ -87,29 +104,70 @@ public class Message implements java.io.Serializable{
         return signature;
     }
     
+    public boolean isVerified(){
+        return verified;
+    }
+    
+    public void setVerified(boolean value){
+        verified = value;
+    }
+    
     public void sign(PrivateKey privateKey){
         try {
-            String s = sender + recipient + subject + contents;
             Signature instance = Signature.getInstance("SHA1withRSA");
             instance.initSign(privateKey);
-            instance.update((s).getBytes());
+            instance.update(contents.getBytes());
             byte[] signatureBytes = instance.sign();
             signature = bytesToHex(signatureBytes);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException ex) {
             Logger.getLogger(Message.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
     public Boolean verifySignature(PublicKey publicKey){
         try {
             byte[] signatureBytes = hexToBytes(signature);
             Signature instance = Signature.getInstance("SHA1withRSA");
             instance.initVerify((PublicKey) publicKey);
-            instance.update(signatureBytes);
-            boolean verified = instance.verify(signatureBytes);
-            return verified;
+            instance.update(contents.getBytes());
+            return instance.verify(signatureBytes);
         } catch (SignatureException | InvalidKeyException | NoSuchAlgorithmException ex) {
             Logger.getLogger(Message.class.getName()).log(Level.SEVERE, null, ex);
         }
         return false;
+    }
+    
+    public Boolean verifySignature(String hexKey){
+        try {
+            PublicKey publicKey = hexToPublicKey(hexKey);
+            return verifySignature(publicKey);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            Logger.getLogger(Message.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+
+    public static String bytesToHex(byte[] b) {
+        String result = "";
+        for (int i = 0; i < b.length; i++) {
+            result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return result;
+    }
+    
+    public static byte[] hexToBytes(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
+    
+    public PublicKey hexToPublicKey(String hexKey) throws NoSuchAlgorithmException, InvalidKeySpecException{
+        byte[] encodedPublicKey = hexToBytes(hexKey);
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(encodedPublicKey);
+        return keyFactory.generatePublic(publicKeySpec);
     }
 }

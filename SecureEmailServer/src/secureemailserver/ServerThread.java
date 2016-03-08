@@ -22,33 +22,26 @@ public class ServerThread implements Runnable{
     
 //    private static final String PUBLIC_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\public";
 //    private static final String PRIVATE_KEY_FILE = "C:\\Users\\Will\\Documents\\CS\\EmailProject\\SecureEmailServer\\keys\\private";
-    private static  String PUBLIC_KEY_FILE;
-    private static  String PRIVATE_KEY_FILE;
     
     private Connection conn = null;
     
     private static final Random RANDOM = new SecureRandom();
 
     //  Database credentials
-    private static final String USER = "root";
-    private static final String PASS = "MySQL0905";
-    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
+//    private static final String USER = "root";
+//    private static final String PASS = "MySQL0905";
+//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+//    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
 
 //    //  Database credentials
-//    private static final String USER = "spgw33";
-//    private static final String PASS = "fra84nce";
-//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-//    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
+    private static final String USER = "spgw33";
+    private static final String PASS = "fra84nce";
+    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
     
     public ServerThread(Socket socket){
-        
-        URL pubUrl = getClass().getResource("keys/public");
-        URL privUrl = getClass().getResource("keys/private");
-        PUBLIC_KEY_FILE = pubUrl.getPath();
-        PRIVATE_KEY_FILE = privUrl.getPath();
-        
         clientSocket = socket;
+        
         try{
             inFromClient = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             outToClient = new DataOutputStream(clientSocket.getOutputStream());
@@ -92,7 +85,6 @@ public class ServerThread implements Runnable{
             }
             //Log in
             if (headerCode.equals("LOGN")){
-                suppliedPassword = "";
                 parts = receivedFromClient.split("\\.",2); //split on '.' into a maximum of 3 strings
                 username = parts[0];
                 encryptedPassword = parts[1];
@@ -104,36 +96,72 @@ public class ServerThread implements Runnable{
                 }
                 else{
                     System.out.println("Password incorrect");
-                }
-            }
-            //Get Messages
-            if (headerCode.equals("GETM")){
-                ArrayList<Message> messages = getClientMessages(username);
-                output = "";
-                for(Message m : messages){
-                    try {
-                        output = output + "." + messageToHex(m);
-                    } catch (IOException ex) {
-                        Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                try{
-                    output = output.substring(1);
-                } catch (StringIndexOutOfBoundsException e){
-                    System.err.println("String too short: " + e);
                     output = "DECLINE";
                 }
             }
+            //Get Messages
+            if (headerCode.equals("ANYM")){
+                ArrayList<Message> messages = getClientMessages(username);
+                if (messages.isEmpty()){
+                    output = "NOMESS";
+                }
+                else {
+                    output = "ALLVER";
+                    for(Message m : messages){
+                        if(m.verifySignature(getPublicKey(m.getSender()))){
+                        }
+                        else{
+                            output = "NOTVER";
+                        }
+                    }
+                }
+            }
+            if (headerCode.equals("GETV")){
+                ArrayList<Message> messages = getClientMessages(username);
+                output = "";
+                for(Message m : messages){
+                    if(m.verifySignature(getPublicKey(m.getSender()))){
+                        m.setVerified(true);
+                        output = output + "." + messageToHex(m);
+                    }
+                }
+                try{
+                    //remove . and check for no messages
+                    output = output.substring(1);
+                } catch (StringIndexOutOfBoundsException e){
+                    System.err.println("String too short: " + e);
+                    output = "NOMESS";
+                }
+            }
+            if (headerCode.equals("GETA")){
+                ArrayList<Message> messages = getClientMessages(username);
+                output = "";
+                for(Message m : messages){
+                    if(m.verifySignature(getPublicKey(m.getSender()))){
+                        m.setVerified(true);
+                        output = output + "." + messageToHex(m);
+                    }
+                    else{
+                        m.setVerified(false);
+                        output = output + "." + messageToHex(m);
+                    }
+                }
+                try{
+                    //remove . and check for no messages
+                    output = output.substring(1);
+                } catch (StringIndexOutOfBoundsException e){
+                    System.err.println("String too short: " + e);
+                    output = "NOMESS";
+                }
+            }
+            if (headerCode.equals("GETK")){
+                String keyUsername = receivedFromClient;
+                output = getPublicKey(keyUsername);
+            }
             //Send a message (Must have logged in)
             else if (accepted && headerCode.equals("SEND")){
-                String messageTargetUser;
-                String messageSignature;
-                String messageContents;
-                parts = receivedFromClient.split("\\.",3);
-                messageTargetUser = parts[0];
-                messageSignature = parts[1];
-                messageContents = parts[2];
-                if(addMessage(username, messageTargetUser, messageContents, messageSignature)){
+                Message message = hexToMessage(receivedFromClient);
+                if(addMessage(message)){
                     output = "ACCEPT";
                 }
             }
@@ -193,11 +221,10 @@ public class ServerThread implements Runnable{
     //Open a connection
     public void dbConnect(){
         try {
-            System.out.println("Connecting to DB");
             conn = DriverManager.getConnection(DB_URL,USER,PASS);
-            System.out.println("Connected to DB");
         } catch (SQLException e) {
-            System.err.println("Failed to connect to DB: "+e);
+            System.err.println("Failed to connect to DB: ");
+            e.printStackTrace();
         }
     }
     
@@ -244,9 +271,9 @@ public class ServerThread implements Runnable{
         st.executeUpdate("UPDATE "+table+" SET "+updates+" WHERE "+whereConstraints+";");
     }
     
-    public boolean addMessage(String senderUser, String targetUser, String contents, String signature){
+    public boolean addMessage(Message message){
         try {
-            addToDB("messages", "senderUser, targetUser, messageContents, messageSignature", "'"+senderUser+"', '"+targetUser+"', '"+contents+"', '"+signature+"'");
+            addToDB("messages", "senderUser, targetUser, messageSubject, messageContents, messageSignature", "'"+message.getSender().replaceAll("'", "''")+"', '"+message.getRecipient().replaceAll("'", "''")+"', '"+message.getSubject().replaceAll("'", "''")+"', '"+message.getContents().replaceAll("'", "''")+"', '"+message.getSignature().replaceAll("'", "''")+"'");
             return true;
         } catch (SQLException e) {
             System.err.println("Could not add message to DB: " + e);
@@ -285,6 +312,7 @@ public class ServerThread implements Runnable{
         ArrayList<Message> messages = new ArrayList<Message>();
         ArrayList<String> fields = new ArrayList<String>();
         fields.add("senderUser");
+        fields.add("messageSubject");
         fields.add("messageContents");
         fields.add("messageSignature");
         try {
@@ -294,9 +322,10 @@ public class ServerThread implements Runnable{
         }
         for (ArrayList<String> messageString : messageStrings){
             String senderUser = messageString.get(0);
-            String messageContents = messageString.get(1);
-            String messageSignature = messageString.get(2);
-            messages.add(new Message(senderUser, username, "Subject", messageContents, messageSignature));
+            String messageSubject = messageString.get(1);
+            String messageContents = messageString.get(2);
+            String messageSignature = messageString.get(3);
+            messages.add(new Message(senderUser, username, messageSubject, messageContents, messageSignature));
         }
         return messages;
     }
@@ -306,7 +335,7 @@ public class ServerThread implements Runnable{
         ArrayList<String> fields = new ArrayList<String>();
         fields.add("publicKey");
         try {
-            client = queryDB("clients", fields, "username = "+targetUser);
+            client = queryDB("clients", fields, "username = '"+targetUser+"'");
         } catch (SQLException e) {
             System.err.println("Error fetching key from database: " + e);
         }
@@ -344,22 +373,44 @@ public class ServerThread implements Runnable{
         }
     }
     
-    public String messageToHex(Message message) throws IOException{
+    public String messageToHex(Message message){
+        ObjectOutputStream oos = null;
         String hexString = "";
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(message);
-        byte[] buf = baos.toByteArray();
-        hexString = bytesToHex(buf);
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            oos = new ObjectOutputStream(baos);
+            oos.writeObject(message);
+            byte[] buf = baos.toByteArray();
+            hexString = bytesToHex(buf);
+        } catch (IOException ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                oos.close();
+            } catch (IOException ex) {
+                Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         return hexString;
     }
     
-    public Message hexToMessage(String hexString) throws IOException, ClassNotFoundException{
-        ObjectInputStream ois =
-        new ObjectInputStream(new ByteArrayInputStream(hexToBytes(hexString)));
-        Message message = (Message) ois.readObject();
-        ois.close();
-        return message;
+    public Message hexToMessage(String hexString){
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(new ByteArrayInputStream(hexToBytes(hexString)));
+            Message message = (Message) ois.readObject();
+            ois.close();
+            return message;
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                ois.close();
+            } catch (IOException ex) {
+                Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return null;
     }
         
     public static boolean checkPass (String givenPassword, byte[] salt, byte[] expectedHash) {
@@ -389,7 +440,6 @@ public class ServerThread implements Runnable{
             System.err.println("Username does not exist: " + e);
             return false;
         }
-        System.out.println(user);
         String realPasswordHash = user.get(0);
         return checkPass(givenPassword, hexToBytes(getClientSalt(username)), hexToBytes(realPasswordHash));
     }
@@ -448,17 +498,59 @@ public class ServerThread implements Runnable{
         }
         return decryptedPassword;
     }
-    public KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public static void saveKeyPair(KeyPair keyPair) throws IOException {
+        PrivateKey privateKey = keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+        
+        String path = "secureemailserver/keys";
+        
+        File keysDir = new File(path);
+        
+        if(!keysDir.exists()){
+            keysDir.mkdirs();
+            System.out.println("Creating directory at: "+keysDir);
+        }
+        
+        String pubKeyFile = path+"/public";
+        String privKeyFile = path+"/private";
+
+        // Store Public Key.
+        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(
+                        publicKey.getEncoded());
+        FileOutputStream fos = new FileOutputStream(pubKeyFile);
+        fos.write(x509EncodedKeySpec.getEncoded());
+        fos.close();
+
+        // Store Private Key.
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
+                        privateKey.getEncoded());
+        fos = new FileOutputStream(privKeyFile);
+        fos.write(pkcs8EncodedKeySpec.getEncoded());
+        fos.close();
+    }
+
+    public static KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+            String path = "secureemailserver/keys";
+
+            File keysDir = new File(path);
+
+            if(!keysDir.exists()){
+                throw new IOException("Could not find file");
+            }
+
+            String pubKeyFile = path+"/public";
+            String privKeyFile = path+"/private";
+            
             // Read Public Key.
-            File filePublicKey = new File(PUBLIC_KEY_FILE);
-            FileInputStream fis = new FileInputStream(PUBLIC_KEY_FILE);
+            File filePublicKey = new File(pubKeyFile);
+            FileInputStream fis = new FileInputStream(pubKeyFile);
             byte[] encodedPublicKey = new byte[(int) filePublicKey.length()];
             fis.read(encodedPublicKey);
             fis.close();
 
             // Read Private Key.
-            File filePrivateKey = new File(PRIVATE_KEY_FILE);
-            fis = new FileInputStream(PRIVATE_KEY_FILE);
+            File filePrivateKey = new File(privKeyFile);
+            fis = new FileInputStream(privKeyFile);
             byte[] encodedPrivateKey = new byte[(int) filePrivateKey.length()];
             fis.read(encodedPrivateKey);
             fis.close();
