@@ -28,16 +28,16 @@ public class ServerThread implements Runnable{
     private static final Random RANDOM = new SecureRandom();
 
     //  Database credentials
-//    private static final String USER = "root";
-//    private static final String PASS = "MySQL0905";
-//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-//    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
+    private static final String USER = "root";
+    private static final String PASS = "MySQL0905";
+    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
 
 //    //  Database credentials
-    private static final String USER = "spgw33";
-    private static final String PASS = "fra84nce";
-    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
+//    private static final String USER = "spgw33";
+//    private static final String PASS = "fra84nce";
+//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+//    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
     
     public ServerThread(Socket socket){
         clientSocket = socket;

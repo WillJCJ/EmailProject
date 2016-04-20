@@ -5,6 +5,7 @@
  */
 package secureemailclient;
 
+import java.awt.Toolkit;
 import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
@@ -14,7 +15,7 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 import static secureemailclient.ClientGUI.*;
 import static secureemailclient.LoginGUI.*;
 
@@ -49,6 +50,9 @@ public class SenderGUI extends javax.swing.JFrame {
         }
         
         initComponents();
+        URL url = IPSelect.class.getResource("/images/iconPadlock.png");
+        ImageIcon icon = new ImageIcon(url);
+        setIconImage(icon.getImage());
         
         contentsText.setLineWrap(true);
         contentsText.setWrapStyleWord(true);
@@ -73,7 +77,8 @@ public class SenderGUI extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         contentsText = new javax.swing.JTextArea();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Send Message");
 
         sendButton.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         sendButton.setText("Send");
@@ -119,14 +124,14 @@ public class SenderGUI extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(sendButton, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(cancelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jLabel3)
                             .addComponent(jLabel1)

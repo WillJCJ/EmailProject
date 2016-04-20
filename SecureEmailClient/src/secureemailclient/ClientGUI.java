@@ -8,6 +8,7 @@ package secureemailclient;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.awt.Toolkit;
 import java.nio.file.Path;
 import java.io.*;
 import java.net.Socket;
@@ -33,13 +34,14 @@ public class ClientGUI extends javax.swing.JFrame {
     private Socket clientSocket;
     
     public static String username;
+    public static String ip;
     
     public ArrayList<Message> messages = new ArrayList<Message>();
     
     /**
      * Creates new form ClientGUI
      */
-    public ClientGUI(Socket socket, String username) {
+    public ClientGUI(Socket socket, String username, String ip) {
         clientSocket = socket;
         
 //        URL pubUrl = getClass().getResource("keys/public");
@@ -48,8 +50,12 @@ public class ClientGUI extends javax.swing.JFrame {
 //        PRIVATE_KEY_FILE = privUrl.getPath();
         
         ClientGUI.username = username;
+        ClientGUI.ip = ip;
         
         initComponents();
+        URL url = IPSelect.class.getResource("/images/iconPadlock.png");
+        ImageIcon icon = new ImageIcon(url);
+        setIconImage(icon.getImage());
         
         DefaultListModel listModel = new DefaultListModel();
         jList1.setModel(listModel);
@@ -112,10 +118,12 @@ public class ClientGUI extends javax.swing.JFrame {
         jList1 = new javax.swing.JList<String>();
         getMessageButton = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
-        jMenu1 = new javax.swing.JMenu();
+        jMenuAccount = new javax.swing.JMenu();
+        jMenuAccountItemLogout = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("SecureMail");
 
         newMessageButton.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         newMessageButton.setText("New Message");
@@ -181,8 +189,17 @@ public class ClientGUI extends javax.swing.JFrame {
             }
         });
 
-        jMenu1.setText("File");
-        jMenuBar1.add(jMenu1);
+        jMenuAccount.setText("Account");
+
+        jMenuAccountItemLogout.setText("Logout");
+        jMenuAccountItemLogout.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuAccountItemLogoutActionPerformed(evt);
+            }
+        });
+        jMenuAccount.add(jMenuAccountItemLogout);
+
+        jMenuBar1.add(jMenuAccount);
 
         jMenu2.setText("Edit");
         jMenuBar1.add(jMenu2);
@@ -257,6 +274,12 @@ public class ClientGUI extends javax.swing.JFrame {
         updateMessages();
     }//GEN-LAST:event_getMessageButtonActionPerformed
 
+    private void jMenuAccountItemLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuAccountItemLogoutActionPerformed
+        LoginGUI loginGUI = new LoginGUI(ip);
+        this.setVisible(false);
+        dispose();
+    }//GEN-LAST:event_jMenuAccountItemLogoutActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea contentsText;
     private javax.swing.JTextField fromText;
@@ -265,8 +288,9 @@ public class ClientGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JList<String> jList1;
-    private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenuAccount;
+    private javax.swing.JMenuItem jMenuAccountItemLogout;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
@@ -336,7 +360,7 @@ public class ClientGUI extends javax.swing.JFrame {
         PrivateKey privateKey = keyPair.getPrivate();
         PublicKey publicKey = keyPair.getPublic();
         
-        String path = "secureemailclient/users/"+username+"/keys";
+        String path = "userData/"+username+"/keys";
         
         File keysDir = new File(path);
         
@@ -364,7 +388,7 @@ public class ClientGUI extends javax.swing.JFrame {
     }
 
     public static KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-            String path = "secureemailclient/users/"+username+"/keys";
+            String path = "userData/"+username+"/keys";
 
             File keysDir = new File(path);
 
@@ -420,11 +444,14 @@ public class ClientGUI extends javax.swing.JFrame {
             getMessages(true);
         }
         else if(received.equals("NOTVER")){
-            int reply = JOptionPane.showConfirmDialog(
-            this,
-            "There are unverified messages addressed to you, would you like to receive them?",
-            "Unverified Messages",
-            JOptionPane.YES_NO_OPTION);
+            int reply;
+            do{
+                reply = JOptionPane.showConfirmDialog(
+                this,
+                "There are unverified messages addressed to you, would you like to receive them?",
+                "Unverified Messages",
+                JOptionPane.YES_NO_OPTION);
+            } while(reply == JOptionPane.CLOSED_OPTION); //Stops the windows close button working.
             if (reply == JOptionPane.YES_OPTION) {
                 getMessages(false);
             }

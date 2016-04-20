@@ -119,8 +119,10 @@ public class Message implements java.io.Serializable{
             instance.update(contents.getBytes());
             byte[] signatureBytes = instance.sign();
             signature = bytesToHex(signatureBytes);
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException ex) {
-            Logger.getLogger(Message.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvalidKeyException e){
+            System.err.println("Error signing string, key invalid");
+        } catch (NoSuchAlgorithmException | SignatureException e) {
+            System.err.println("Error signing string: "+e);
         }
     }
     
@@ -131,8 +133,10 @@ public class Message implements java.io.Serializable{
             instance.initVerify((PublicKey) publicKey);
             instance.update(contents.getBytes());
             return instance.verify(signatureBytes);
-        } catch (SignatureException | InvalidKeyException | NoSuchAlgorithmException ex) {
-            Logger.getLogger(Message.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvalidKeyException e){
+            System.err.println("Error signing string, key invalid");
+        } catch (NoSuchAlgorithmException | SignatureException e) {
+            System.err.println("Error signing string: "+e);
         }
         return false;
     }

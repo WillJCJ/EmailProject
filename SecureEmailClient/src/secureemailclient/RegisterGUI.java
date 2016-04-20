@@ -5,6 +5,7 @@
  */
 package secureemailclient;
 
+import java.awt.Toolkit;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,10 @@ public class RegisterGUI extends javax.swing.JFrame {
      */
     public RegisterGUI() {
         initComponents();
+        URL url = IPSelect.class.getResource("/images/iconPadlock.png");
+        ImageIcon icon = new ImageIcon(url);
+        setIconImage(icon.getImage());
+        
         Border border = BorderFactory.createCompoundBorder(usernameField.getBorder(), BorderFactory.createEmptyBorder(1, 2, 1, 1));
         usernameField.setBorder(border);
         passwordField1.setBorder(border);
@@ -56,7 +61,11 @@ public class RegisterGUI extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         passwordField2 = new javax.swing.JPasswordField();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Register");
+        setForeground(java.awt.Color.red);
+
+        jPanel1.setToolTipText("");
 
         jLabel2.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel2.setText("Account Name");

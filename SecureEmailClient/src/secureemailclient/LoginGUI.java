@@ -5,8 +5,10 @@
  */
 package secureemailclient;
 
+import java.awt.Toolkit;
 import java.io.*;
 import java.net.Socket;
+import java.net.URL;
 import java.nio.charset.*;
 import java.security.*;
 import java.security.spec.*;
@@ -41,6 +43,10 @@ public class LoginGUI extends javax.swing.JFrame {
         connect();
         
         initComponents();
+        URL url = IPSelect.class.getResource("/images/iconPadlock.png");
+        ImageIcon icon = new ImageIcon(url);
+        setIconImage(icon.getImage());
+        
         this.setVisible(true);
         
         Border border = BorderFactory.createCompoundBorder(usernameField.getBorder(), BorderFactory.createEmptyBorder(1, 2, 1, 1));
@@ -76,6 +82,7 @@ public class LoginGUI extends javax.swing.JFrame {
         jButton2.setText("Register");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Login");
 
         jLabel2.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         jLabel2.setText("Account Name");
@@ -223,8 +230,7 @@ public class LoginGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Username or password incorrect, please re-enter your details.");
         }
         else if (backFromServer.equals("ACCEPT")){
-            ClientGUI clientGUI = new ClientGUI(clientSocket, username);
-            this.setVisible(false);
+            ClientGUI clientGUI = new ClientGUI(clientSocket, username, ip);
             dispose();
         }
         else{
