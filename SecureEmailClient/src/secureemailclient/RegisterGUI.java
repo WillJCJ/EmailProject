@@ -174,23 +174,7 @@ public class RegisterGUI extends javax.swing.JFrame {
         String username = usernameField.getText();
         char[] password = passwordField1.getPassword();
         boolean accepted = true;
-        if(password.length < 6){
-            JOptionPane.showMessageDialog(this, "Password too short. Passwords must be at least 6 characters in length");
-            accepted = false;
-        }
-        else if(password.length > 128){
-            JOptionPane.showMessageDialog(this, "Password too long. Passwords must be at most 127 characters in length");
-            accepted = false;
-        }
-        else if(username.length() < 4){
-            JOptionPane.showMessageDialog(this, "Username too short. Usernames must be at least 4 characters in length");
-            accepted = false;
-        }
-        else if(username.length() > 20){
-            JOptionPane.showMessageDialog(this, "Username too long. Usernames must be at most 20 characters in length");
-            accepted = false;
-        }
-        else if (!Arrays.equals(password, passwordField2.getPassword())){
+        if (!Arrays.equals(password, passwordField2.getPassword())){
             JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.");
             accepted = false;
         }
@@ -214,8 +198,17 @@ public class RegisterGUI extends javax.swing.JFrame {
             if (backFromServer.equals("ACCEPT")){
                 JOptionPane.showMessageDialog(this, "Thank you for registering, please log in.");
                 this.setVisible(false);
+            }
+            else if (backFromServer.equals("DECLINEPASSWORD")){
+                JOptionPane.showMessageDialog(this, "Passwords must be at 6-32 characters in length and contain a didgit, a lowercase letter and an upper case letter.");
+            }
+            else if (backFromServer.equals("DECLINEUSERNAME")){
+                JOptionPane.showMessageDialog(this, "Usernames must be a valid email address.");
+            }
+            else if (backFromServer.equals("DECLINEUSERNAMEEXISTS")){
+                JOptionPane.showMessageDialog(this, "Username already exists.");
             }else{
-                JOptionPane.showMessageDialog(this, "Error adding user. Username may already exist.");
+                JOptionPane.showMessageDialog(this, "Error adding account.");
             }
         }
     }//GEN-LAST:event_registerButtonActionPerformed

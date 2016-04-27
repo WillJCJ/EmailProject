@@ -10,6 +10,8 @@ import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import secureemailclient.Message;
@@ -61,6 +63,12 @@ public class ServerThread implements Runnable{
         
         String headerCode = "";
         String receivedFromClient = "";
+        
+        try {
+            dumpKeyPair(loadKeyPair());
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         dbConnect();
         
@@ -182,13 +190,30 @@ public class ServerThread implements Runnable{
             //New User
             else if (headerCode.equals("NEWU")){
                 parts = receivedFromClient.split("\\.",3);
-                System.out.println(parts);
                 encryptedPassword = parts[0];
                 publicKeyString = parts[1];
                 username = parts[2];
                 suppliedPassword = decryptPassword(encryptedPassword);
-                if(addClient(username, suppliedPassword, publicKeyString)){
-                    output = "ACCEPT";
+                if (checkUsername(username)){
+                    if (checkPassword(suppliedPassword)){
+                        if (!checkUsernameExists(username)){
+                            if (addClient(username, suppliedPassword, publicKeyString)){
+                                output = "ACCEPT";
+                            }
+                            else{
+                                output = "ERROR";
+                            }
+                        }
+                        else{
+                            output = "DECLINEUSERNAMEEXISTS";
+                        }
+                    }
+                    else{
+                        output = "DECLINEPASSWORD";
+                    }
+                }
+                else{
+                    output = "DECLINEUSERNAME";
                 }
             }
             //New Public Key for User
@@ -444,6 +469,21 @@ public class ServerThread implements Runnable{
         return checkPass(givenPassword, hexToBytes(getClientSalt(username)), hexToBytes(realPasswordHash));
     }
     
+    public boolean checkUsernameExists(String username){
+        ArrayList<String> fields = new ArrayList<String>();
+        fields.add("username");
+        try {
+            queryDB("clients", fields, "username = '"+username + "'").get(0);
+        }catch (SQLException e) {
+            System.err.println("Could not check username: " + e);
+            return true;
+        }catch (Exception e) {
+            System.err.println("Username does not exist: " + e);
+            return false;
+        }
+        return true;
+    }
+    
     public KeyPair genKeyPair() throws NoSuchAlgorithmException{
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(1024);
@@ -566,5 +606,21 @@ public class ServerThread implements Runnable{
             PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
 
             return new KeyPair(publicKey, privateKey);
+    }
+    
+    public boolean checkUsername(String username){
+        String emailRegex = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
+        //String usernameRegex = "^[a-z0-9._-]{4,16}$";
+        Pattern emailPattern = Pattern.compile(emailRegex);
+        Matcher emailMatcher = emailPattern.matcher(username);
+        return emailMatcher.find();
+    }
+    
+    public boolean checkPassword(String password){
+        String passwordRegex = "((?=.*[a-z])(?=.*[0-9])(?=.*[A-Z]).{6,32})";
+        //String usernameRegex = "^[a-z0-9._-]{4,16}$";
+        Pattern passwordPattern = Pattern.compile(passwordRegex);
+        Matcher passwordMatcher = passwordPattern.matcher(password);
+        return passwordMatcher.find();
     }
 }
