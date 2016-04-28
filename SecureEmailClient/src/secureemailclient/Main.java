@@ -15,8 +15,7 @@ import javax.swing.JFrame;
  * @author willjohnson
  */
 public class Main {
-    public Main(){
-    }
+    public Main(){}
     
     public void start(){
         IPSelect ipselect = new IPSelect();
