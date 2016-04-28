@@ -5,7 +5,6 @@
  */
 package secureemailclient;
 
-import java.awt.Toolkit;
 import java.io.*;
 import java.net.Socket;
 import java.net.URL;
@@ -227,14 +226,14 @@ public class LoginGUI extends javax.swing.JFrame {
         }
         System.out.println(backFromServer);
         if (backFromServer.equals("DECLINE")){
-            JOptionPane.showMessageDialog(this, "Username or password incorrect, please re-enter your details.");
+            JOptionPane.showMessageDialog(this, "Username or password incorrect, please re-enter your details.", "Incorrect Details", JOptionPane.INFORMATION_MESSAGE);
         }
         else if (backFromServer.equals("ACCEPT")){
-            ClientGUI clientGUI = new ClientGUI(clientSocket, username, ip);
-            dispose();
+            
+            setVisible(false);
         }
         else{
-            JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.");
+            JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.", "No Connection", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_loginButtonActionPerformed
 
@@ -360,7 +359,7 @@ public class LoginGUI extends javax.swing.JFrame {
     
     public String sendLoginDetails(String username, char[] password) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException{
         byte[] encryptedPassword = encryptString(Arrays.toString(password), getServerPubKey());
-        return sendAndReceive("LOGN" + username + "." + bytesToHex(encryptedPassword));
+        return sendAndReceive("LOGN" + bytesToHex(encryptedPassword) + "." + username);
     }
     
     public PublicKey getServerPubKey() throws InvalidKeySpecException, NoSuchAlgorithmException{
@@ -380,5 +379,13 @@ public class LoginGUI extends javax.swing.JFrame {
         // encrypt with known character encoding, you should probably use hybrid cryptography instead 
         byte[] encryptedMessage = encrypt.doFinal(inputString.getBytes(StandardCharsets.UTF_8));
         return encryptedMessage;
+    }
+    
+    public String getUsername(){
+        return usernameField.getText();
+    }
+    
+    public Socket getSocket(){
+        return clientSocket;
     }
 }

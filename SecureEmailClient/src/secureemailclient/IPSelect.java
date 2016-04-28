@@ -11,9 +11,7 @@
 package secureemailclient;
 
 import java.net.URL;
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 
@@ -70,6 +68,11 @@ public class IPSelect extends javax.swing.JFrame {
 
         ipTextField.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         ipTextField.setText("129.234.204.224");
+        ipTextField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ipTextFieldActionPerformed(evt);
+            }
+        });
         ipTextField.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 ipTextFieldKeyPressed(evt);
@@ -107,38 +110,29 @@ public class IPSelect extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void connectLocalhostActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectLocalhostActionPerformed
+        ipTextField.setText("localHost");
         this.setVisible(false);
-        LoginGUI loginGUI = new LoginGUI("localhost");
     }//GEN-LAST:event_connectLocalhostActionPerformed
 
     private void connectExternalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectExternalActionPerformed
         String givenIP = ipTextField.getText();
         this.setVisible(false);
-        LoginGUI loginGUI = new LoginGUI(givenIP);
     }//GEN-LAST:event_connectExternalActionPerformed
 
     private void ipTextFieldKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_ipTextFieldKeyPressed
         if(evt.getKeyCode() == 10){
-             //connectExternalActionPerformed(null);
-
-            URL url = getClass().getResource("/images/iconPadlock.png");
-            
-            JOptionPane.showMessageDialog(this, url);
-
+             connectExternalActionPerformed(null);
         }
     }//GEN-LAST:event_ipTextFieldKeyPressed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
+    private void ipTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ipTextFieldActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_ipTextFieldActionPerformed
 
-            public void run() {
-                new IPSelect().setVisible(true);
-            }
-        });
+    public String getIP(){
+        return ipTextField.getText();
     }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton connectExternal;
     private javax.swing.JButton connectLocalhost;

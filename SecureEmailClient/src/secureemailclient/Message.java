@@ -5,9 +5,16 @@
  */
 package secureemailclient;
 
-import java.security.*;
-import java.security.spec.*;
-import java.util.logging.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+
 
 /**
  *
@@ -145,8 +152,8 @@ public class Message implements java.io.Serializable{
         try {
             PublicKey publicKey = hexToPublicKey(hexKey);
             return verifySignature(publicKey);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            Logger.getLogger(Message.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | NullPointerException e) {
+            System.err.println("Could not verify signature: " + e);
             return false;
         }
     }

@@ -5,26 +5,21 @@
  */
 package secureemailclient;
 
-import java.awt.Color;
 import java.awt.Component;
-import java.awt.Font;
-import java.awt.Toolkit;
-import java.nio.file.Path;
 import java.io.*;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.*;
 import java.security.spec.*;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 import static secureemailclient.LoginGUI.sendAndReceive;
+import sun.security.rsa.RSAPublicKeyImpl;
 
 /**
  *
@@ -35,6 +30,8 @@ public class ClientGUI extends javax.swing.JFrame {
     
     public static String username;
     public static String ip;
+    
+    private Message currentMessage;
     
     public ArrayList<Message> messages = new ArrayList<Message>();
     
@@ -75,10 +72,10 @@ public class ClientGUI extends javax.swing.JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 int i = jList1.getSelectedIndex();
                 if (i >= 0){
-                    Message message = messages.get(i);
-                    fromText.setText(message.getSender());
-                    subjectText.setText(message.getSubject());
-                    contentsText.setText(message.getContents());
+                    currentMessage = messages.get(i);
+                    fromText.setText(currentMessage.getSender());
+                    subjectText.setText(currentMessage.getSubject());
+                    contentsText.setText(currentMessage.getContents());
                     contentsText.setCaretPosition(0);
                 }
           }
@@ -120,7 +117,10 @@ public class ClientGUI extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenuAccount = new javax.swing.JMenu();
         jMenuAccountItemLogout = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
+        jMenuAccountItemNewKey = new javax.swing.JMenuItem();
+        jMenuMessage = new javax.swing.JMenu();
+        jMenuEditItemDelete = new javax.swing.JMenuItem();
+        jMenuEditItemVerify = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("SecureMail");
@@ -139,7 +139,6 @@ public class ClientGUI extends javax.swing.JFrame {
         jLabel1.setText("From:");
 
         fromText.setEditable(false);
-        fromText.setBackground(new java.awt.Color(255, 255, 255));
         fromText.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         fromText.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(130, 130, 130)));
         fromText.setMargin(new java.awt.Insets(2, 5, 2, 2));
@@ -148,7 +147,6 @@ public class ClientGUI extends javax.swing.JFrame {
         jLabel3.setText("Subject:");
 
         subjectText.setEditable(false);
-        subjectText.setBackground(new java.awt.Color(255, 255, 255));
         subjectText.setFont(new java.awt.Font("Microsoft YaHei", 0, 12)); // NOI18N
         subjectText.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(130, 130, 130)));
         subjectText.setMargin(new java.awt.Insets(2, 5, 2, 2));
@@ -199,10 +197,30 @@ public class ClientGUI extends javax.swing.JFrame {
         });
         jMenuAccount.add(jMenuAccountItemLogout);
 
+        jMenuAccountItemNewKey.setText("New Key");
+        jMenuAccountItemNewKey.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuAccountItemNewKeyActionPerformed(evt);
+            }
+        });
+        jMenuAccount.add(jMenuAccountItemNewKey);
+
         jMenuBar1.add(jMenuAccount);
 
-        jMenu2.setText("Edit");
-        jMenuBar1.add(jMenu2);
+        jMenuMessage.setText("Message");
+
+        jMenuEditItemDelete.setText("Delete");
+        jMenuMessage.add(jMenuEditItemDelete);
+
+        jMenuEditItemVerify.setText("Verify");
+        jMenuEditItemVerify.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuEditItemVerifyActionPerformed(evt);
+            }
+        });
+        jMenuMessage.add(jMenuEditItemVerify);
+
+        jMenuBar1.add(jMenuMessage);
 
         setJMenuBar(jMenuBar1);
 
@@ -272,13 +290,23 @@ public class ClientGUI extends javax.swing.JFrame {
     private void getMessageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_getMessageButtonActionPerformed
         askForMessages();
         updateMessages();
+        
+        jList1.setSelectedIndex(0); //Already have the first message item selected
     }//GEN-LAST:event_getMessageButtonActionPerformed
 
     private void jMenuAccountItemLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuAccountItemLogoutActionPerformed
-        LoginGUI loginGUI = new LoginGUI(ip);
         this.setVisible(false);
-        dispose();
+        this.dispose();
     }//GEN-LAST:event_jMenuAccountItemLogoutActionPerformed
+
+    private void jMenuEditItemVerifyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuEditItemVerifyActionPerformed
+        verifyMessage(currentMessage);
+    }//GEN-LAST:event_jMenuEditItemVerifyActionPerformed
+
+    private void jMenuAccountItemNewKeyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuAccountItemNewKeyActionPerformed
+        newKey();
+        JOptionPane.showMessageDialog(this, "New keypair generated.", "New Keypair", JOptionPane.INFORMATION_MESSAGE);
+    }//GEN-LAST:event_jMenuAccountItemNewKeyActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextArea contentsText;
@@ -288,10 +316,13 @@ public class ClientGUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JList<String> jList1;
-    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenuAccount;
     private javax.swing.JMenuItem jMenuAccountItemLogout;
+    private javax.swing.JMenuItem jMenuAccountItemNewKey;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JMenuItem jMenuEditItemDelete;
+    private javax.swing.JMenuItem jMenuEditItemVerify;
+    private javax.swing.JMenu jMenuMessage;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JSeparator jSeparator1;
@@ -387,9 +418,8 @@ public class ClientGUI extends javax.swing.JFrame {
         fos.close();
     }
 
-    public static KeyPair loadKeyPair() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-            String path = "userData/"+username+"/keys";
-
+    public static KeyPair loadKeyPair(String path) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        
             File keysDir = new File(path);
 
             if(!keysDir.exists()){
@@ -460,8 +490,45 @@ public class ClientGUI extends javax.swing.JFrame {
             }
         }
         else{
-            JOptionPane.showMessageDialog(this, "No new messages.");
+            JOptionPane.showMessageDialog(this, "No new messages.", "No Messages", JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+    
+    public void verifyMessage(Message m){
+        String hexKey = sendAndReceive("GETK"+m.getSender());
+        try {
+            PublicKey pKey = m.hexToPublicKey(hexKey);
+            RSAPublicKeyImpl pk = (RSAPublicKeyImpl) pKey;
+            BigInteger modulus = pk.getModulus();
+            BigInteger exponent = pk.getPublicExponent();
+            
+            String modulusLines = bigIntegerToLines(modulus);
+            
+            JOptionPane.showMessageDialog(this, "Sender's public key:\nModulus: "+modulusLines+"\nExponent: "+exponent, "Public Key", JOptionPane.INFORMATION_MESSAGE);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            System.err.println("Error verifying message: " + e);
+            JOptionPane.showMessageDialog(this, "Could not verify message,\nSender's key is invalid.", "Unverified Message", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (m.verifySignature(hexKey)){
+            JOptionPane.showMessageDialog(this, "Sender's public key successfully used to verify signature.", "Message verified", JOptionPane.INFORMATION_MESSAGE);
+        }
+        else{
+            JOptionPane.showMessageDialog(this, "Sender's public key does not match signature.", "Message not verified", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+    
+    public String bigIntegerToLines(BigInteger bigInt){
+        String bigString = bigInt.toString();
+        String lines = "";
+        for (int i=0; i< bigString.length(); i++){
+            if (i % 60 == 1){
+                lines = lines + "\n";
+            }
+            lines  = lines + bigString.charAt(i);
+        }
+        
+        return lines;
     }
     
     public void getMessages(boolean verified){
@@ -474,10 +541,10 @@ public class ClientGUI extends javax.swing.JFrame {
             received = sendAndReceive("GETA");
         }
         if (received.equals("ERROR")){
-            JOptionPane.showMessageDialog(this, "Error receiving messages.");
+            JOptionPane.showMessageDialog(this, "Error receiving messages.", "Error", JOptionPane.INFORMATION_MESSAGE);
         }
         else if (received.equals("NOMESS")){
-            JOptionPane.showMessageDialog(this, "No new messages.");
+            JOptionPane.showMessageDialog(this, "No new messages.", "No Messages", JOptionPane.INFORMATION_MESSAGE);
         }
         else{
             String[] parts = received.split("\\.");
@@ -496,7 +563,6 @@ public class ClientGUI extends javax.swing.JFrame {
     public void updateMessages(){
         DefaultListModel listModel = new DefaultListModel();
         for (Message message : messages){
-            System.out.println(message.isVerified());
             listModel.addElement(message.displayHTMLString());
         }
         if(listModel.getSize() <= 0){

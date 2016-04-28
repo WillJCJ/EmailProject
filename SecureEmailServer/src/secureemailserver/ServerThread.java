@@ -30,16 +30,16 @@ public class ServerThread implements Runnable{
     private static final Random RANDOM = new SecureRandom();
 
     //  Database credentials
-    private static final String USER = "root";
-    private static final String PASS = "MySQL0905";
-    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
+//    private static final String USER = "root";
+//    private static final String PASS = "MySQL0905";
+//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+//    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
 
 //    //  Database credentials
-//    private static final String USER = "spgw33";
-//    private static final String PASS = "fra84nce";
-//    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-//    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
+    private static final String USER = "spgw33";
+    private static final String PASS = "fra84nce";
+    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
+    private static final String DB_URL = "jdbc:mysql://mysql.dur.ac.uk:3306/Pspgw33_EmailDB";
     
     public ServerThread(Socket socket){
         clientSocket = socket;
@@ -94,8 +94,8 @@ public class ServerThread implements Runnable{
             //Log in
             if (headerCode.equals("LOGN")){
                 parts = receivedFromClient.split("\\.",2); //split on '.' into a maximum of 3 strings
-                username = parts[0];
-                encryptedPassword = parts[1];
+                encryptedPassword = parts[0];
+                username = parts[1];
                 suppliedPassword = decryptPassword(encryptedPassword);
                 if (checkClientPassword(username, suppliedPassword)){
                     accepted = true;
@@ -108,7 +108,7 @@ public class ServerThread implements Runnable{
                 }
             }
             //Get Messages
-            if (headerCode.equals("ANYM")){
+            if (accepted && headerCode.equals("ANYM")){
                 ArrayList<Message> messages = getClientMessages(username);
                 if (messages.isEmpty()){
                     output = "NOMESS";
@@ -124,7 +124,7 @@ public class ServerThread implements Runnable{
                     }
                 }
             }
-            if (headerCode.equals("GETV")){
+            if (accepted && headerCode.equals("GETV")){
                 ArrayList<Message> messages = getClientMessages(username);
                 output = "";
                 for(Message m : messages){
@@ -141,7 +141,7 @@ public class ServerThread implements Runnable{
                     output = "NOMESS";
                 }
             }
-            if (headerCode.equals("GETA")){
+            if (accepted && headerCode.equals("GETA")){
                 ArrayList<Message> messages = getClientMessages(username);
                 output = "";
                 for(Message m : messages){
@@ -364,7 +364,12 @@ public class ServerThread implements Runnable{
         } catch (SQLException e) {
             System.err.println("Error fetching key from database: " + e);
         }
-        return client.get(0).get(0);
+        try{
+            return client.get(0).get(0);
+        }
+        catch(IndexOutOfBoundsException e){
+            return null;
+        }
     }
     
     public String getClientSalt(String username){
@@ -376,7 +381,12 @@ public class ServerThread implements Runnable{
         } catch (SQLException e) {
             System.err.println("Error fetching salt from database: " + e);
         }
-        return client.get(0).get(0);
+        try{
+            return client.get(0).get(0);
+        }
+        catch(IndexOutOfBoundsException e){
+            return null;
+        }
     }
     
     public static byte[] getNextSalt() {
@@ -522,8 +532,8 @@ public class ServerThread implements Runnable{
             Cipher decrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             decrypt.init(Cipher.DECRYPT_MODE, privKey);
             output = new String(decrypt.doFinal(inputBytes), StandardCharsets.UTF_8);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException ex) {
-            Logger.getLogger(ServerThread.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            System.err.println("Error decrypting String: "+e);
         }
         return output;
     }

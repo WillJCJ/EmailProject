@@ -5,7 +5,6 @@
  */
 package secureemailclient;
 
-import java.awt.Toolkit;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -13,8 +12,6 @@ import javax.crypto.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.Border;
 import static secureemailclient.LoginGUI.*;
@@ -175,7 +172,7 @@ public class RegisterGUI extends javax.swing.JFrame {
         char[] password = passwordField1.getPassword();
         boolean accepted = true;
         if (!Arrays.equals(password, passwordField2.getPassword())){
-            JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.");
+            JOptionPane.showMessageDialog(this, "Passwords do not match, please reenter passwords.", "Passwords Do Not Match", JOptionPane.INFORMATION_MESSAGE);
             accepted = false;
         }
         if (accepted){
@@ -196,19 +193,19 @@ public class RegisterGUI extends javax.swing.JFrame {
             }
             String backFromServer = sendAndReceive("NEWU" + bytesToHex(encryptedPassword) +"."+ publicKeyString +"."+ username);
             if (backFromServer.equals("ACCEPT")){
-                JOptionPane.showMessageDialog(this, "Thank you for registering, please log in.");
+                JOptionPane.showMessageDialog(this, "Thank you for registering, please log in.", "Thank You", JOptionPane.INFORMATION_MESSAGE);
                 this.setVisible(false);
             }
             else if (backFromServer.equals("DECLINEPASSWORD")){
-                JOptionPane.showMessageDialog(this, "Passwords must be at 6-32 characters in length and contain a didgit, a lowercase letter and an upper case letter.");
+                JOptionPane.showMessageDialog(this, "Passwords must be at 6-32 characters in length and contain a didgit, a lowercase letter and an upper case letter.", "Invalid Password", JOptionPane.INFORMATION_MESSAGE);
             }
             else if (backFromServer.equals("DECLINEUSERNAME")){
-                JOptionPane.showMessageDialog(this, "Usernames must be a valid email address.");
+                JOptionPane.showMessageDialog(this, "Usernames must be a valid email address.", "Invalid Username", JOptionPane.INFORMATION_MESSAGE);
             }
             else if (backFromServer.equals("DECLINEUSERNAMEEXISTS")){
-                JOptionPane.showMessageDialog(this, "Username already exists.");
+                JOptionPane.showMessageDialog(this, "Username already exists.", "UUsername Exists", JOptionPane.INFORMATION_MESSAGE);
             }else{
-                JOptionPane.showMessageDialog(this, "Error adding account.");
+                JOptionPane.showMessageDialog(this, "Error adding account.", "Error", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }//GEN-LAST:event_registerButtonActionPerformed

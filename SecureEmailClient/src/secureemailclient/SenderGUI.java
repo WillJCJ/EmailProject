@@ -5,17 +5,17 @@
  */
 package secureemailclient;
 
-import java.awt.Toolkit;
-import java.awt.event.WindowEvent;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.URL;
-import java.security.*;
-import java.security.spec.*;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 import static secureemailclient.ClientGUI.*;
 import static secureemailclient.LoginGUI.*;
 
@@ -179,12 +179,30 @@ public class SenderGUI extends javax.swing.JFrame {
         String targetUser = jTextField1.getText();
         String subject = subjectText.getText();
         String contents = contentsText.getText();
-        try {
-            PrivateKey privateKey = loadKeyPair().getPrivate();
-            sendMessage(targetUser, subject, contents, privateKey);
-        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            ex.printStackTrace();
-        }
+        PrivateKey privateKey = null;
+        String path = "userData/"+username+"/keys";
+        String defaultOrSpecified = "default";
+        do {            
+            try {
+                privateKey = loadKeyPair(path).getPrivate();
+                sendMessage(targetUser, subject, contents, privateKey); //Can only send message if key is loaded.
+                return;
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+                System.err.println("Error loading key" + e);
+            } catch (IOException ex) {
+                path = (String) JOptionPane.showInputDialog(
+                        this,
+                        "Could not find key in "+defaultOrSpecified+" location.\n"
+                        + "Please specify path to your private key:",
+                        "Key not found",
+                        JOptionPane.PLAIN_MESSAGE,
+                        null,
+                        null,
+                        "/volumes/");
+                defaultOrSpecified = "specified";
+            }
+        } while (path != null); //null if cancel is pressed.
+        
     }//GEN-LAST:event_sendButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -222,15 +240,15 @@ public class SenderGUI extends javax.swing.JFrame {
         String messageHex = ClientGUI.messageToHex(m);
         backFromServer = sendAndReceive("SEND" + messageHex);
         if (backFromServer.equals("DECLINE")){
-            JOptionPane.showMessageDialog(this, "Could not send message, please try again later.");
+            JOptionPane.showMessageDialog(this, "Could not send message, please try again later.", "Error", JOptionPane.INFORMATION_MESSAGE);
         }
         if (backFromServer.equals("ACCEPT")){
-            JOptionPane.showMessageDialog(this, "Message sent.");
+            JOptionPane.showMessageDialog(this, "Message sent.", "Message Sent", JOptionPane.INFORMATION_MESSAGE);
             this.setVisible(false);
             dispose();
         }
         else{
-            JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.");
+            JOptionPane.showMessageDialog(this, "Could not connect to server, please check connection and restart program.", "Error", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 }
