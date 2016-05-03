@@ -121,7 +121,7 @@ public class Message implements java.io.Serializable{
     
     public void sign(PrivateKey privateKey){
         try {
-            Signature instance = Signature.getInstance("SHA1withRSA");
+            Signature instance = Signature.getInstance("SHA256withRSA");
             instance.initSign(privateKey);
             instance.update(contents.getBytes());
             byte[] signatureBytes = instance.sign();
@@ -136,7 +136,7 @@ public class Message implements java.io.Serializable{
     public Boolean verifySignature(PublicKey publicKey){
         try {
             byte[] signatureBytes = hexToBytes(signature);
-            Signature instance = Signature.getInstance("SHA1withRSA");
+            Signature instance = Signature.getInstance("SHA256withRSA");
             instance.initVerify((PublicKey) publicKey);
             instance.update(contents.getBytes());
             return instance.verify(signatureBytes);
