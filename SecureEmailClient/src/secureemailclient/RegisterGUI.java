@@ -190,6 +190,8 @@ public class RegisterGUI extends javax.swing.JFrame {
                 publicKeyString = bytesToHex(kp.getPublic().getEncoded());
             } catch (NoSuchAlgorithmException | IOException ex) {
                 System.err.println("Error creating and saving key: " + ex);
+                JOptionPane.showMessageDialog(this, "Error creating and saving key: " + ex, "Error", JOptionPane.INFORMATION_MESSAGE);
+
             }
             String backFromServer = sendAndReceive("NEWU" + bytesToHex(encryptedPassword) +"."+ publicKeyString +"."+ username);
             if (backFromServer.equals("ACCEPT")){

@@ -14,8 +14,8 @@ import javax.swing.JFrame;
  *
  * @author willjohnson
  */
-public class Main {
-    public Main(){}
+public class SecureMessages {
+    public SecureMessages(){}
     
     public void start(){
         IPSelect ipselect = new IPSelect();
@@ -26,13 +26,12 @@ public class Main {
             wait(loginGUI);
             ClientGUI clientGUI = new ClientGUI(loginGUI.getSocket(), loginGUI.getUsername(), ipselect.getIP());
             clientGUI.setVisible(true);
-            System.out.println("Executed");
             wait(clientGUI);
         }
     }
     
     public static void main(String args[]) {
-        Main m = new Main();
+        SecureMessages m = new SecureMessages();
         m.start();
     }
     
@@ -41,7 +40,7 @@ public class Main {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(SecureMessages.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

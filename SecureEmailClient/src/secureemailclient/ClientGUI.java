@@ -31,6 +31,8 @@ public class ClientGUI extends javax.swing.JFrame {
     public static String username;
     public static String ip;
     
+    private final boolean debug = true;
+    
     private Message currentMessage;
     
     public ArrayList<Message> messages = new ArrayList<Message>();
@@ -119,7 +121,6 @@ public class ClientGUI extends javax.swing.JFrame {
         jMenuAccountItemLogout = new javax.swing.JMenuItem();
         jMenuAccountItemNewKey = new javax.swing.JMenuItem();
         jMenuMessage = new javax.swing.JMenu();
-        jMenuEditItemDelete = new javax.swing.JMenuItem();
         jMenuEditItemVerify = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -209,9 +210,6 @@ public class ClientGUI extends javax.swing.JFrame {
 
         jMenuMessage.setText("Message");
 
-        jMenuEditItemDelete.setText("Delete");
-        jMenuMessage.add(jMenuEditItemDelete);
-
         jMenuEditItemVerify.setText("Verify");
         jMenuEditItemVerify.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -300,7 +298,7 @@ public class ClientGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuAccountItemLogoutActionPerformed
 
     private void jMenuEditItemVerifyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuEditItemVerifyActionPerformed
-        verifyMessage(currentMessage);
+        verifyMessage(currentMessage, debug);
     }//GEN-LAST:event_jMenuEditItemVerifyActionPerformed
 
     private void jMenuAccountItemNewKeyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuAccountItemNewKeyActionPerformed
@@ -320,7 +318,6 @@ public class ClientGUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuAccountItemLogout;
     private javax.swing.JMenuItem jMenuAccountItemNewKey;
     private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuEditItemDelete;
     private javax.swing.JMenuItem jMenuEditItemVerify;
     private javax.swing.JMenu jMenuMessage;
     private javax.swing.JScrollPane jScrollPane1;
@@ -394,6 +391,9 @@ public class ClientGUI extends javax.swing.JFrame {
         String path = "userData/"+username+"/keys";
         
         File keysDir = new File(path);
+        
+//        JOptionPane.showMessageDialog(null, keysDir.getAbsolutePath(), "New Keypair", JOptionPane.INFORMATION_MESSAGE);
+
         
         if(!keysDir.exists()){
             keysDir.mkdirs();
@@ -494,24 +494,59 @@ public class ClientGUI extends javax.swing.JFrame {
         }
     }
     
-    public void verifyMessage(Message m){
+    public void verifyMessage(Message m, boolean debug){
+        
         String hexKey = sendAndReceive("GETK"+m.getSender());
+        
         try {
             PublicKey pKey = m.hexToPublicKey(hexKey);
-            RSAPublicKeyImpl pk = (RSAPublicKeyImpl) pKey;
-            BigInteger modulus = pk.getModulus();
-            BigInteger exponent = pk.getPublicExponent();
             
-            String modulusLines = bigIntegerToLines(modulus);
-            
-            JOptionPane.showMessageDialog(this, "Sender's public key:\nModulus: "+modulusLines+"\nExponent: "+exponent, "Public Key", JOptionPane.INFORMATION_MESSAGE);
+            if(debug){
+//                RSAPublicKeyImpl pk = (RSAPublicKeyImpl) pKey;
+//                BigInteger modulus = pk.getModulus();
+//                BigInteger exponent = pk.getPublicExponent();
+//                
+//                System.out.println("Modulus: " + modulus);
+//                System.out.println("Exponent: " + exponent);
+//
+////                int exponentInt = exponent.intValue();
+//
+//                String modulusLines = bigIntegerToLines(modulus);
+//                String exponentString = exponent.toString(16);
+//                
+//                System.out.println("Hex Modulus: " + modulusLines);
+//                System.out.println("Hex Exponent: " + exponentString);
+//
+//                String signatureHex = m.getSignature();
+//                System.out.println("signatureHex: " + signatureHex);
+//
+//                BigInteger signatureInt = new BigInteger(signatureHex, 16);
+//
+////                BigInteger messageIntFromSig = signatureInt.pow(exponentInt); //Takes a long time
+//
+//
+//                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+//                byte[] messageHash = digest.digest(m.getSignedPart().getBytes());
+//
+//                String messageString = bytesToHex(messageHash);
+//
+//                BigInteger messageInt = new BigInteger(messageString, 16);
+//
+////                System.out.println("messageIntFromSig: " + messageIntFromSig);
+//                System.out.println("messageInt: " + messageInt);
+//                
+//                JOptionPane.showMessageDialog(this, "Sender's public key:\nModulus: " + modulusLines + "\nExponent: " + exponentString, "Public Key", JOptionPane.INFORMATION_MESSAGE);
+//                JOptionPane.showMessageDialog(this, "signature ^ exponent = ", "Public Key", JOptionPane.INFORMATION_MESSAGE);
+                
+            }
+        
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             System.err.println("Error verifying message: " + e);
             JOptionPane.showMessageDialog(this, "Could not verify message,\nSender's key is invalid.", "Unverified Message", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (m.verifySignature(hexKey)){
-            JOptionPane.showMessageDialog(this, "Sender's public key successfully used to verify signature.", "Message verified", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Sender's public key was successfully used to verify signature.", "Message verified", JOptionPane.INFORMATION_MESSAGE);
         }
         else{
             JOptionPane.showMessageDialog(this, "Sender's public key does not match signature.", "Message not verified", JOptionPane.INFORMATION_MESSAGE);
@@ -519,10 +554,10 @@ public class ClientGUI extends javax.swing.JFrame {
     }
     
     public String bigIntegerToLines(BigInteger bigInt){
-        String bigString = bigInt.toString();
+        String bigString = bigInt.toString(16);
         String lines = "";
         for (int i=0; i< bigString.length(); i++){
-            if (i % 60 == 1){
+            if ((i>50 && (i+10) % 60 == 1)){
                 lines = lines + "\n";
             }
             lines  = lines + bigString.charAt(i);

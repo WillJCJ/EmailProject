@@ -119,11 +119,20 @@ public class Message implements java.io.Serializable{
         verified = value;
     }
     
+    public void makeSignedPart(){
+        signedPart = sender + recipient + subject + contents;
+    }
+    
+    public String getSignedPart(){
+        return signedPart;
+    }
+    
     public void sign(PrivateKey privateKey){
         try {
             Signature instance = Signature.getInstance("SHA256withRSA");
             instance.initSign(privateKey);
-            instance.update(contents.getBytes());
+            makeSignedPart();
+            instance.update(signedPart.getBytes());
             byte[] signatureBytes = instance.sign();
             signature = bytesToHex(signatureBytes);
         } catch (InvalidKeyException e){
@@ -137,8 +146,8 @@ public class Message implements java.io.Serializable{
         try {
             byte[] signatureBytes = hexToBytes(signature);
             Signature instance = Signature.getInstance("SHA256withRSA");
-            instance.initVerify((PublicKey) publicKey);
-            instance.update(contents.getBytes());
+            instance.initVerify(publicKey);
+            instance.update(signedPart.getBytes());
             return instance.verify(signatureBytes);
         } catch (InvalidKeyException e){
             System.err.println("Error signing string, key invalid");

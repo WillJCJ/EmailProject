@@ -29,13 +29,14 @@ public class ServerThread implements Runnable{
     
     private static final Random RANDOM = new SecureRandom();
 
-    //  Database credentials
-//    private static final String USER = "root";
+//    Database credentials
+//    Home system
+//    private static final String USER = "will";
 //    private static final String PASS = "MySQL0905";
 //    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
-//    private static final String DB_URL = "jdbc:mysql://localhost/emaildb";
+//    private static final String DB_URL = "jdbc:mysql://192.168.1.146:3306/emaildb";
 
-//    //  Database credentials
+//    University system
     private static final String USER = "spgw33";
     private static final String PASS = "fra84nce";
     private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";  
@@ -84,8 +85,14 @@ public class ServerThread implements Runnable{
             try{
                 request = inFromClient.readLine();
                 System.out.println("Received '"+request+"' from client.");
-                headerCode = request.substring(0,4);
-                receivedFromClient = request.substring(4);
+                try {
+                    headerCode = request.substring(0, 4);
+                    receivedFromClient = request.substring(4);
+                } catch (NullPointerException ex) {
+                    System.err.println("Received null from client, closing connection.");
+                    clientSocket.close();
+                    break;
+                }
             }
             catch(IOException e){
                 System.err.println("Error receiving from client: "+e);
@@ -247,6 +254,7 @@ public class ServerThread implements Runnable{
     public void dbConnect(){
         try {
             conn = DriverManager.getConnection(DB_URL,USER,PASS);
+            System.out.println("Connected to db.");
         } catch (SQLException e) {
             System.err.println("Failed to connect to DB: ");
             e.printStackTrace();

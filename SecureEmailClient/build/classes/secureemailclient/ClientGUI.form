@@ -32,11 +32,6 @@
             <Property name="text" type="java.lang.String" value="Message"/>
           </Properties>
           <SubComponents>
-            <MenuItem class="javax.swing.JMenuItem" name="jMenuEditItemDelete">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Delete"/>
-              </Properties>
-            </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="jMenuEditItemVerify">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Verify"/>
